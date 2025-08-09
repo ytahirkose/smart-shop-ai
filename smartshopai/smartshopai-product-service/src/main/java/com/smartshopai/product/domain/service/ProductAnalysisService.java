@@ -30,7 +30,7 @@ public class ProductAnalysisService {
         log.info("Starting AI analysis for product: {}", product.getName());
         
         ProductAnalysis analysis = ProductAnalysis.builder()
-                .productId(product.getProductId())
+                .productId(product.getId())
                 .analyzedAt(LocalDateTime.now())
                 .build();
         
@@ -89,9 +89,9 @@ public class ProductAnalysisService {
         analysis.setTechnicalSummary(generateTechnicalSummary(product));
         analysis.setTechnicalSpecs(extractTechnicalSpecs(product));
         // Convert Map<String, Object> to Map<String, String> for technical details
-        if (product.getSpecifications() != null) {
+        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null) {
             Map<String, String> technicalDetails = new HashMap<>();
-            product.getSpecifications().forEach((key, value) -> 
+            product.getSpecifications().getSpecifications().forEach((key, value) -> 
                 technicalDetails.put(key, value != null ? value.toString() : ""));
             analysis.setTechnicalDetails(technicalDetails);
         }
@@ -142,7 +142,7 @@ public class ProductAnalysisService {
             score += product.getAverageRating() * 0.3;
         }
         
-        if (product.getSpecifications() != null && !product.getSpecifications().isEmpty()) {
+        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null && !product.getSpecifications().getSpecifications().isEmpty()) {
             score += 1.0;
         }
         
@@ -210,7 +210,7 @@ public class ProductAnalysisService {
     
     private BigDecimal calculatePricePerFeature(Product product) {
         if (product.getFeatures() != null && !product.getFeatures().isEmpty() && product.getPrice() != null) {
-            return product.getPrice().divide(BigDecimal.valueOf(product.getFeatures().size()), 2, BigDecimal.ROUND_HALF_UP);
+            return product.getPrice().divide(BigDecimal.valueOf(product.getFeatures().size()), 2, java.math.RoundingMode.HALF_UP);
         }
         return BigDecimal.ZERO;
     }
@@ -231,7 +231,7 @@ public class ProductAnalysisService {
         StringBuilder summary = new StringBuilder();
         summary.append("Technical overview of ").append(product.getName()).append(": ");
         
-        if (product.getSpecifications() != null && !product.getSpecifications().isEmpty()) {
+        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null && !product.getSpecifications().getSpecifications().isEmpty()) {
             summary.append("Comprehensive specifications available. ");
         }
         
@@ -246,8 +246,8 @@ public class ProductAnalysisService {
     
     private List<String> extractTechnicalSpecs(Product product) {
         List<String> specs = new ArrayList<>();
-        if (product.getSpecifications() != null) {
-            product.getSpecifications().forEach((key, value) -> 
+        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null) {
+            product.getSpecifications().getSpecifications().forEach((key, value) ->
                 specs.add(key + ": " + value));
         }
         return specs;
@@ -297,31 +297,89 @@ public class ProductAnalysisService {
     }
     
     private String identifyCompetitiveAdvantage(Product product) {
-        return "Key advantages include brand reputation and feature set.";
-    }
-    
-    private String analyzeMarketTrend(Product product) {
-        return "Current market trends favor quality products in this category.";
-    }
-    
-    private BigDecimal analyzePriceHistory(Product product) {
-        return product.getPrice();
-    }
-    
-    private String determinePriceTrend(Product product) {
-        if (product.getOriginalPrice() != null && product.getPrice() != null) {
-            if (product.getPrice().compareTo(product.getOriginalPrice()) < 0) {
-                return "Price is currently discounted";
+        if (product.getFeatures() != null && !product.getFeatures().isEmpty()) {
+            int featureCount = product.getFeatures().size();
+            if (featureCount > 10) {
+                return "Rich feature set outperforms many competitors (" + featureCount + " listed features)";
             }
         }
-        return "Price appears stable";
+        if (product.getAverageRating() != null && product.getAverageRating() >= 4.5) {
+            return "Exceptional user satisfaction with an average rating of " + product.getAverageRating();
+        }
+        if (Boolean.TRUE.equals(product.getFeatured())) {
+            return "Featured product in its category indicating strong vendor backing.";
+        }
+        return "Brand recognition and balanced feature-price ratio provide competitive edge.";
     }
-    
+
+    private String analyzeMarketTrend(Product product) {
+        if (product.getViewCount() > 2000) {
+            return "High and increasing view counts indicate rising market interest.";
+        }
+        if (product.getAverageRating() != null && product.getAverageRating() >= 4.5) {
+            return "Positive user sentiment suggests steady demand in the market.";
+        }
+        return "Market demand appears steady for this category.";
+    }
+
+    private java.math.BigDecimal analyzePriceHistory(Product product) {
+        if (product.getPriceHistories() != null && !product.getPriceHistories().isEmpty()) {
+            // Return the most recent price in history
+            return product.getPriceHistories().get(0).getPrice();
+        }
+        return product.getPrice();
+    }
+
+    private String determinePriceTrend(Product product) {
+        if (product.getPriceHistories() != null && product.getPriceHistories().size() >= 2) {
+            var latest = product.getPriceHistories().get(0).getPrice();
+            var previous = product.getPriceHistories().get(1).getPrice();
+            int cmp = latest.compareTo(previous);
+            if (cmp < 0) return "Downward price trend";
+            if (cmp > 0) return "Upward price trend";
+        }
+        return "Stable";
+    }
+
     private String predictPriceMovement(Product product) {
-        return "Prices in this category are expected to remain stable in the near term.";
+        if (product.getOriginalPrice() != null && product.getPrice() != null) {
+            double discount = (product.getOriginalPrice().doubleValue() - product.getPrice().doubleValue()) / product.getOriginalPrice().doubleValue();
+            if (discount > 0.25) {
+                return "Price already discounted significantly; further drops unlikely soon.";
+            }
+        }
+        if (product.getPriceHistories() != null && product.getPriceHistories().size() >= 3) {
+            // Simple trend: compare last price with avg of previous
+            java.util.List<java.math.BigDecimal> prices = product.getPriceHistories().stream()
+                    .map(ph -> ph.getPrice())
+                    .toList();
+            java.math.BigDecimal latest = prices.get(0);
+            java.math.BigDecimal avgPrev = prices.stream().skip(1).reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add)
+                    .divide(java.math.BigDecimal.valueOf(prices.size() - 1), 2, java.math.RoundingMode.HALF_UP);
+            if (latest.compareTo(avgPrev) < 0) {
+                return "Recent downward trend suggests potential price increase back to average soon.";
+            } else if (latest.compareTo(avgPrev) > 0) {
+                return "Prices show an upward trend; waiting might not yield savings.";
+            }
+        }
+        return "Prices are expected to remain stable over the next quarter.";
     }
-    
+
     private String generateDiscountRecommendation(Product product) {
-        return "Monitor for seasonal sales and promotional events for potential savings.";
+        if (product.getPrice() != null && product.getOriginalPrice() != null) {
+            double discount = (product.getOriginalPrice().doubleValue() - product.getPrice().doubleValue()) / product.getOriginalPrice().doubleValue();
+            if (discount >= 0.3) {
+                return "Take advantage of the current \u226530% discount—great buy right now!";
+            }
+            if (discount >= 0.15) {
+                return "Decent discount available. Consider purchasing if it fits your budget.";
+            }
+        }
+        String season = java.time.Month.from(java.time.LocalDate.now()).toString();
+        if (season.equals("NOVEMBER") || season.equals("DECEMBER")) {
+            return "Wait for Black Friday/Cyber Monday deals for potential significant savings.";
+        }
+        return "Set up a price alert and monitor for promotional events in the coming weeks.";
     }
 }
+

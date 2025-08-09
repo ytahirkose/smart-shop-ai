@@ -67,4 +67,22 @@ public class Product {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    private BigDecimal price; // Alias for currentPrice for backward compatibility
+    private BigDecimal originalPrice;
+    private java.util.List<String> features;
+    private Boolean trending;
+    private String warranty;
+
+    public BigDecimal getPrice() {
+        return price != null ? price : currentPrice;
+    }
+
+    public Boolean getFeatured() {
+        return featured;
+    }
+
+    public BigDecimal getOriginalPrice() {
+        return originalPrice;
+    }
 }

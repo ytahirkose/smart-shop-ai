@@ -227,26 +227,69 @@ public class AISearchEngineService {
     }
 
     private List<SearchResult.SearchProduct> parseSearchResults(String aiResponse) {
-        // Simple parsing - in production, use more sophisticated parsing
-        return List.of(
-            SearchResult.SearchProduct.builder()
-                .productId("product-1")
-                .productName("Sample Product 1")
-                .relevanceScore(0.95)
-                .matchReason("Exact match")
-                .build(),
-            SearchResult.SearchProduct.builder()
-                .productId("product-2")
-                .productName("Sample Product 2")
-                .relevanceScore(0.85)
-                .matchReason("Semantic match")
-                .build()
-        );
+        if (aiResponse == null || aiResponse.isBlank()) {
+            return List.of();
+        }
+        java.util.List<SearchResult.SearchProduct> products = new java.util.ArrayList<>();
+        String[] lines = aiResponse.split("\r?\n");
+        int counter = 1;
+        for (String line : lines) {
+            String trimmed = line.strip();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            // Identify list bullets like "1.", "-", "*"
+            if (trimmed.matches("^(?:\\d+\\.|[-*])\\s+.*")) {
+                // Extract after bullet
+                String content = trimmed.replaceFirst("^(?:\\d+\\.|[-*])\\s+", "").trim();
+                // Attempt to split product name and reason by "-" delimiter
+                String[] parts = content.split(" - ", 2);
+                String namePart = parts[0].trim();
+                String reasonPart = parts.length > 1 ? parts[1].trim() : "Matched your query";
+
+                SearchResult.SearchProduct product = SearchResult.SearchProduct.builder()
+                        .productId("auto-" + counter)
+                        .productName(namePart)
+                        .matchReason(reasonPart)
+                        .relevanceScore(Math.round((1.0 - (counter - 1) * 0.05) * 100.0) / 100.0)
+                        .build();
+                products.add(product);
+                counter++;
+            }
+            if (counter > 20) {
+                break; // Limit results to 20
+            }
+        }
+        if (products.isEmpty()) {
+            // Fallback: single dummy product with the response snippet
+            products.add(SearchResult.SearchProduct.builder()
+                    .productId("auto-1")
+                    .productName(aiResponse.substring(0, Math.min(50, aiResponse.length())).replaceAll("\n", " ") + "...")
+                    .matchReason("AI response snippet")
+                    .relevanceScore(0.5)
+                    .build());
+        }
+        return products;
     }
 
     private Double calculateRelevanceScore(String aiResponse) {
-        // Simple calculation - in production, use more sophisticated analysis
-        return 0.90; // Default relevance score
+        if (aiResponse == null || aiResponse.isBlank()) {
+            return 0.0;
+        }
+        // If AI provided explicit relevance/confidence, parse it
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?i)(relevance|confidence)[\n\r:\\s]*([0-9]+(?:\\.[0-9]+)?)").matcher(aiResponse);
+        if (matcher.find()) {
+            try {
+                double parsed = Double.parseDouble(matcher.group(2));
+                if (parsed <= 1.0) {
+                    return parsed;
+                }
+                return parsed / 100.0;
+            } catch (NumberFormatException ignored) {}
+        }
+        // Heuristic: the shorter the response, the higher our confidence
+        double score = 1.0 / (1 + aiResponse.length() / 1000.0);
+        return Math.round(score * 100.0) / 100.0;
     }
 
     private Long estimateTokens(String text) {

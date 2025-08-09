@@ -242,13 +242,52 @@ public class AIRecommendationEngineService {
     }
 
     private String extractReasoning(String aiResponse) {
-        // Simple extraction - in production, use more sophisticated parsing
-        return "AI analysis based on user preferences and product features";
+        // Attempt to capture a dedicated reasoning section if present
+        if (aiResponse == null || aiResponse.isBlank()) {
+            return "No reasoning available";
+        }
+        String lower = aiResponse.toLowerCase();
+        int idx = -1;
+        // Try common markers
+        for (String marker : List.of("reasoning:", "reason:", "why we recommend", "analysis:")) {
+            int pos = lower.indexOf(marker);
+            if (pos != -1) {
+                idx = pos + marker.length();
+                break;
+            }
+        }
+        if (idx != -1) {
+            // Extract until next line break or max 300 chars
+            int end = aiResponse.indexOf('\n', idx);
+            if (end == -1 || end - idx > 300) {
+                end = Math.min(idx + 300, aiResponse.length());
+            }
+            return aiResponse.substring(idx, end).trim();
+        }
+        // Fallback: return first 250 chars as reasoning snippet
+        return aiResponse.substring(0, Math.min(250, aiResponse.length())).trim() + (aiResponse.length() > 250 ? "..." : "");
     }
 
     private Double calculateConfidence(String aiResponse) {
-        // Simple confidence calculation - in production, use more sophisticated analysis
-        return 0.85; // Default confidence score
+        if (aiResponse == null || aiResponse.isBlank()) {
+            return 0.0;
+        }
+        // Look for an explicit confidence score in the response (e.g., "Confidence: 0.87")
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?i)confidence[\n\r:\\s]*([0-9]+(?:\\.[0-9]+)?)").matcher(aiResponse);
+        if (matcher.find()) {
+            try {
+                double parsed = Double.parseDouble(matcher.group(1));
+                if (parsed <= 1.0) {
+                    return parsed; // Already between 0 and 1
+                }
+                // If percentage value like 85, convert to 0-1 range
+                return parsed / 100.0;
+            } catch (NumberFormatException ignored) {}
+        }
+        // Heuristic: base score on number of recommended items (more items -> lower confidence)
+        long bulletCount = aiResponse.lines().filter(l -> l.strip().startsWith("-") || l.strip().startsWith("*")).count();
+        double heuristic = 1.0 / (1 + bulletCount * 0.1);
+        return Math.round(heuristic * 100.0) / 100.0; // round to 2 decimals
     }
 
     private Integer estimateTokens(String text) {

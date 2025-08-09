@@ -47,6 +47,9 @@ dependencies {
     implementation "org.mapstruct:mapstruct:${mapstructVersion}"
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
     
+    // Spring AI
+    implementation "org.springframework.ai:spring-ai-openai-spring-boot-starter"
+
     // Test Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
