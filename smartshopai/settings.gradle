@@ -1,0 +1,26 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        // Explicit plugin repository for SonarQube and other community plugins
+        maven { url 'https://plugins.gradle.org/m2/' }
+        mavenCentral()
+        maven { url 'https://repo.spring.io/milestone' }
+        maven { url 'https://repo.spring.io/snapshot' }
+    }
+}
+
+rootProject.name = 'smartshopai'
+
+include 'smartshopai-gateway'
+include 'smartshopai-discovery'
+include 'smartshopai-user-service'
+include 'smartshopai-product-service'
+include 'smartshopai-ai-analysis-service'
+include 'smartshopai-ai-recommendation-service'
+include 'smartshopai-ai-search-service'
+include 'smartshopai-notification-service'
+include 'smartshopai-search-service'
+include 'smartshopai-monitoring'
+include 'smartshopai-common'
+include 'smartshopai-security'
+include 'smartshopai-session-cache-service'

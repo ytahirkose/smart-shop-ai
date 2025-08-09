@@ -1,0 +1,327 @@
+package com.smartshopai.product.domain.service;
+
+import com.smartshopai.product.domain.entity.Product;
+import com.smartshopai.product.domain.entity.ProductAnalysis;
+import com.smartshopai.product.domain.entity.ProductComparison;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Service for AI-powered product analysis
+ * Handles product quality assessment and recommendations
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class ProductAnalysisService {
+
+    /**
+     * Analyze product and generate insights
+     */
+    public ProductAnalysis analyzeProduct(Product product) {
+        log.info("Starting AI analysis for product: {}", product.getName());
+        
+        ProductAnalysis analysis = ProductAnalysis.builder()
+                .productId(product.getProductId())
+                .analyzedAt(LocalDateTime.now())
+                .build();
+        
+        // Quality assessment
+        analyzeQuality(product, analysis);
+        
+        // Value for money analysis
+        analyzeValueForMoney(product, analysis);
+        
+        // Technical analysis
+        analyzeTechnicalSpecs(product, analysis);
+        
+        // Generate recommendations
+        generateRecommendations(product, analysis);
+        
+        // Market analysis
+        analyzeMarketPosition(product, analysis);
+        
+        // Price analysis
+        analyzePrice(product, analysis);
+        
+        analysis.setAnalysisCompleted(true);
+        
+        log.info("AI analysis completed for product: {}", product.getName());
+        return analysis;
+    }
+    
+    /**
+     * Analyze product quality
+     */
+    private void analyzeQuality(Product product, ProductAnalysis analysis) {
+        double qualityScore = calculateQualityScore(product);
+        
+        analysis.setQualityScore(qualityScore);
+        analysis.setQualityAssessment(getQualityAssessment(qualityScore));
+        analysis.setQualityPros(generateQualityPros(product));
+        analysis.setQualityCons(generateQualityCons(product));
+    }
+    
+    /**
+     * Analyze value for money
+     */
+    private void analyzeValueForMoney(Product product, ProductAnalysis analysis) {
+        double valueScore = calculateValueScore(product);
+        
+        analysis.setValueForMoneyScore(valueScore);
+        analysis.setValueAssessment(getValueAssessment(valueScore));
+        analysis.setPricePerFeature(calculatePricePerFeature(product));
+        analysis.setPriceRecommendation(generatePriceRecommendation(product));
+    }
+    
+    /**
+     * Analyze technical specifications
+     */
+    private void analyzeTechnicalSpecs(Product product, ProductAnalysis analysis) {
+        analysis.setTechnicalSummary(generateTechnicalSummary(product));
+        analysis.setTechnicalSpecs(extractTechnicalSpecs(product));
+        // Convert Map<String, Object> to Map<String, String> for technical details
+        if (product.getSpecifications() != null) {
+            Map<String, String> technicalDetails = new HashMap<>();
+            product.getSpecifications().forEach((key, value) -> 
+                technicalDetails.put(key, value != null ? value.toString() : ""));
+            analysis.setTechnicalDetails(technicalDetails);
+        }
+        analysis.setTechnicalRecommendation(generateTechnicalRecommendation(product));
+    }
+    
+    /**
+     * Generate recommendations
+     */
+    private void generateRecommendations(Product product, ProductAnalysis analysis) {
+        analysis.setUserRecommendation(generateUserRecommendation(product));
+        analysis.setTargetAudience(identifyTargetAudience(product));
+        analysis.setUseCaseRecommendation(generateUseCaseRecommendation(product));
+        analysis.setAiInsights(generateAiInsights(product));
+        analysis.setShoppingAdvice(generateShoppingAdvice(product));
+        analysis.setAlternativeSuggestions(generateAlternativeSuggestions(product));
+    }
+    
+    /**
+     * Analyze market position
+     */
+    private void analyzeMarketPosition(Product product, ProductAnalysis analysis) {
+        analysis.setMarketPosition(assessMarketPosition(product));
+        analysis.setCompetitiveAdvantage(identifyCompetitiveAdvantage(product));
+        analysis.setMarketTrend(analyzeMarketTrend(product));
+    }
+    
+    /**
+     * Analyze price
+     */
+    private void analyzePrice(Product product, ProductAnalysis analysis) {
+        analysis.setPriceHistory(analyzePriceHistory(product));
+        analysis.setPriceTrend(determinePriceTrend(product));
+        analysis.setPricePrediction(predictPriceMovement(product));
+        analysis.setDiscountRecommendation(generateDiscountRecommendation(product));
+    }
+    
+    // Helper methods for analysis
+    private double calculateQualityScore(Product product) {
+        // Simple quality score calculation based on features and specifications
+        double score = 7.0; // Base score
+        
+        if (product.getFeatures() != null && !product.getFeatures().isEmpty()) {
+            score += Math.min(product.getFeatures().size() * 0.5, 2.0);
+        }
+        
+        if (product.getAverageRating() != null) {
+            score += product.getAverageRating() * 0.3;
+        }
+        
+        if (product.getSpecifications() != null && !product.getSpecifications().isEmpty()) {
+            score += 1.0;
+        }
+        
+        return Math.min(score, 10.0);
+    }
+    
+    private double calculateValueScore(Product product) {
+        // Value score based on price vs features
+        double score = 6.0; // Base score
+        
+        if (product.getFeatures() != null && product.getPrice() != null) {
+            double featuresPerDollar = product.getFeatures().size() / product.getPrice().doubleValue();
+            score += Math.min(featuresPerDollar * 10, 3.0);
+        }
+        
+        if (product.getOriginalPrice() != null && product.getPrice() != null) {
+            double discount = (product.getOriginalPrice().doubleValue() - product.getPrice().doubleValue()) / product.getOriginalPrice().doubleValue();
+            score += discount * 2.0;
+        }
+        
+        return Math.min(score, 10.0);
+    }
+    
+    private String getQualityAssessment(double score) {
+        if (score >= 9.0) return "Excellent quality with premium features";
+        if (score >= 7.0) return "Good quality with solid features";
+        if (score >= 5.0) return "Average quality with basic features";
+        return "Below average quality";
+    }
+    
+    private String getValueAssessment(double score) {
+        if (score >= 8.0) return "Excellent value for money";
+        if (score >= 6.0) return "Good value for money";
+        if (score >= 4.0) return "Fair value for money";
+        return "Poor value for money";
+    }
+    
+    private List<String> generateQualityPros(Product product) {
+        List<String> pros = new ArrayList<>();
+        pros.add("Well-established brand");
+        if (product.getFeatures() != null && !product.getFeatures().isEmpty()) {
+            pros.add("Rich feature set");
+        }
+        if (product.getAverageRating() != null && product.getAverageRating() >= 4.0) {
+            pros.add("Highly rated by users");
+        }
+        if (product.getWarranty() != null) {
+            pros.add("Includes warranty");
+        }
+        return pros;
+    }
+    
+    private List<String> generateQualityCons(Product product) {
+        List<String> cons = new ArrayList<>();
+        if (product.getPrice() != null && product.getOriginalPrice() != null) {
+            if (product.getPrice().compareTo(product.getOriginalPrice()) >= 0) {
+                cons.add("No current discounts");
+            }
+        }
+        if (product.getAverageRating() != null && product.getAverageRating() < 3.5) {
+            cons.add("Below average user ratings");
+        }
+        return cons;
+    }
+    
+    private BigDecimal calculatePricePerFeature(Product product) {
+        if (product.getFeatures() != null && !product.getFeatures().isEmpty() && product.getPrice() != null) {
+            return product.getPrice().divide(BigDecimal.valueOf(product.getFeatures().size()), 2, BigDecimal.ROUND_HALF_UP);
+        }
+        return BigDecimal.ZERO;
+    }
+    
+    private String generatePriceRecommendation(Product product) {
+        if (product.getPrice() != null && product.getOriginalPrice() != null) {
+            double discount = (product.getOriginalPrice().doubleValue() - product.getPrice().doubleValue()) / product.getOriginalPrice().doubleValue();
+            if (discount > 0.2) {
+                return "Great deal! Significant discount available";
+            } else if (discount > 0.1) {
+                return "Good discount available";
+            }
+        }
+        return "Consider waiting for better deals";
+    }
+    
+    private String generateTechnicalSummary(Product product) {
+        StringBuilder summary = new StringBuilder();
+        summary.append("Technical overview of ").append(product.getName()).append(": ");
+        
+        if (product.getSpecifications() != null && !product.getSpecifications().isEmpty()) {
+            summary.append("Comprehensive specifications available. ");
+        }
+        
+        if (product.getFeatures() != null && !product.getFeatures().isEmpty()) {
+            summary.append("Features ").append(product.getFeatures().size()).append(" key features. ");
+        }
+        
+        summary.append("Suitable for users looking for ").append(product.getCategory()).append(" products.");
+        
+        return summary.toString();
+    }
+    
+    private List<String> extractTechnicalSpecs(Product product) {
+        List<String> specs = new ArrayList<>();
+        if (product.getSpecifications() != null) {
+            product.getSpecifications().forEach((key, value) -> 
+                specs.add(key + ": " + value));
+        }
+        return specs;
+    }
+    
+    private String generateTechnicalRecommendation(Product product) {
+        return "This product offers solid technical specifications for its category. " +
+               "Consider your specific needs when evaluating the feature set.";
+    }
+    
+    private String generateUserRecommendation(Product product) {
+        return "Based on our analysis, this product is recommended for users who value " +
+               "quality and are willing to invest in a reliable " + product.getCategory() + " solution.";
+    }
+    
+    private List<String> identifyTargetAudience(Product product) {
+        List<String> audience = new ArrayList<>();
+        audience.add("Quality-conscious consumers");
+        audience.add(product.getCategory() + " enthusiasts");
+        if (product.getPrice() != null && product.getPrice().compareTo(BigDecimal.valueOf(100)) > 0) {
+            audience.add("Premium buyers");
+        }
+        return audience;
+    }
+    
+    private String generateUseCaseRecommendation(Product product) {
+        return "Ideal for " + product.getCategory() + " applications where quality and reliability are priorities.";
+    }
+    
+    private String generateAiInsights(Product product) {
+        return "AI analysis suggests this product offers good value for its category. " +
+               "Consider comparing with alternatives for the best deal.";
+    }
+    
+    private String generateShoppingAdvice(Product product) {
+        return "Research alternatives in the same price range and read user reviews " +
+               "before making a final decision.";
+    }
+    
+    private String generateAlternativeSuggestions(Product product) {
+        return "Consider exploring similar products from competing brands " +
+               "to ensure you're getting the best value for your money.";
+    }
+    
+    private String assessMarketPosition(Product product) {
+        return "This product holds a competitive position in the " + product.getCategory() + " market.";
+    }
+    
+    private String identifyCompetitiveAdvantage(Product product) {
+        return "Key advantages include brand reputation and feature set.";
+    }
+    
+    private String analyzeMarketTrend(Product product) {
+        return "Current market trends favor quality products in this category.";
+    }
+    
+    private BigDecimal analyzePriceHistory(Product product) {
+        return product.getPrice();
+    }
+    
+    private String determinePriceTrend(Product product) {
+        if (product.getOriginalPrice() != null && product.getPrice() != null) {
+            if (product.getPrice().compareTo(product.getOriginalPrice()) < 0) {
+                return "Price is currently discounted";
+            }
+        }
+        return "Price appears stable";
+    }
+    
+    private String predictPriceMovement(Product product) {
+        return "Prices in this category are expected to remain stable in the near term.";
+    }
+    
+    private String generateDiscountRecommendation(Product product) {
+        return "Monitor for seasonal sales and promotional events for potential savings.";
+    }
+}

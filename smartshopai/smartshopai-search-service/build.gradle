@@ -1,0 +1,56 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.0'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.smartshopai'
+version = '1.0.0-SNAPSHOT'
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.spring.io/snapshot' }
+}
+
+ext {
+    set('springCloudVersion', "2024.0.0")
+    set('springBootVersion', "3.5.0")
+    set('jwtVersion', "0.11.5")
+    set('lombokVersion', "1.18.34")
+    set('springdocVersion', "2.3.0")
+    set('elasticsearchVersion', "8.13.0")
+    set('pineconeVersion', "1.0.0")
+    set('weaviateVersion', "1.0.0")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+dependencies {
+    // Proje içi bağımlılıklar
+    implementation project(':smartshopai-common')
+
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+
+    // Spring Cloud
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+
+    // AI, LangChain & Vector DB (For Semantic Search)
+    implementation "org.springframework.ai:spring-ai-openai-spring-boot-starter"
+    implementation "dev.langchain4j:langchain4j"
+    implementation "io.pinecone:pinecone-client:${pineconeVersion}"
+    implementation "io.weaviate:weaviate-client:${weaviateVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}

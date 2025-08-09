@@ -1,0 +1,23 @@
+dependencies {
+    // Proje içi bağımlılıklar
+    implementation project(':smartshopai-common')
+
+    // Spring Cloud
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    
+    // Spring AI
+    implementation "org.springframework.ai:spring-ai-openai-spring-boot-starter"
+
+    // Web Scraping
+    implementation "com.microsoft.playwright:playwright:${playwrightVersion}"
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+}
+
+test {
+    useJUnitPlatform()
+}

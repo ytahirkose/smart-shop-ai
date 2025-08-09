@@ -1,0 +1,958 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smartshopai-production
+  labels:
+    name: smartshopai-production
+    environment: production
+
+---
+# ===========================================
+# ConfigMap for Application Configuration
+# ===========================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartshopai-config
+  namespace: smartshopai-production
+data:
+  # MongoDB Configuration
+  MONGODB_HOST: "smartshopai-mongodb"
+  MONGODB_PORT: "27017"
+  MONGODB_DATABASE: "smartshopai_production"
+  
+  # Redis Configuration
+  REDIS_HOST: "smartshopai-redis"
+  REDIS_PORT: "6379"
+  
+  # Elasticsearch Configuration
+  ELASTICSEARCH_HOST: "smartshopai-elasticsearch"
+  ELASTICSEARCH_PORT: "9200"
+  
+  # Kafka Configuration
+  KAFKA_BOOTSTRAP_SERVERS: "smartshopai-kafka:9092"
+  
+  # Eureka Configuration
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: "http://smartshopai-discovery:8761/eureka/"
+  
+  # JWT Configuration
+  JWT_SECRET: "production-jwt-secret-key-very-long-and-secure"
+  JWT_EXPIRATION: "86400000"
+  JWT_REFRESH_EXPIRATION: "604800000"
+  
+  # AI Configuration
+  OPENAI_API_KEY: "your-openai-api-key"
+  PINECONE_API_KEY: "your-pinecone-api-key"
+  WEAVIATE_API_KEY: "your-weaviate-api-key"
+  
+  # Monitoring Configuration
+  PROMETHEUS_ENDPOINT: "http://smartshopai-prometheus:9090"
+  GRAFANA_ENDPOINT: "http://smartshopai-grafana:3000"
+  JAEGER_ENDPOINT: "http://smartshopai-jaeger:16686"
+
+---
+# ===========================================
+# Secrets for Sensitive Data
+# ===========================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: smartshopai-secrets
+  namespace: smartshopai-production
+type: Opaque
+data:
+  # Base64 encoded secrets
+  mongodb-username: c21hcnRzaG9wYWktdXNlcg==
+  mongodb-password: c21hcnRzaG9wYWktcGFzc3dvcmQ=
+  redis-password: cmVkaXMtcGFzc3dvcmQ=
+  elasticsearch-password: ZWxhc3RpYy1wYXNzd29yZA==
+  jwt-secret: cHJvZHVjdGlvbi1qd3Qtc2VjcmV0LWtleS12ZXJ5LWxvbmctYW5kLXNlY3VyZQ==
+  openai-api-key: eW91ci1vcGVuYWktYXBpLWtleQ==
+  twilio-api-key: eW91ci10d2lsaW8tYXBpLWtleQ==
+  twilio-api-secret: eW91ci10d2lsaW8tYXBpLXNlY3JldA==
+  aws-access-key: eW91ci1hd3MtYWNjZXNzLWtleQ==
+  aws-secret-key: eW91ci1hd3Mtc2VjcmV0LWtleQ==
+
+---
+# ===========================================
+# Service Discovery (Eureka)
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-discovery
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-discovery
+    tier: infrastructure
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartshopai-discovery
+  template:
+    metadata:
+      labels:
+        app: smartshopai-discovery
+    spec:
+      containers:
+      - name: discovery
+        image: ghcr.io/smartshopai/smartshopai-discovery:IMAGE_TAG
+        ports:
+        - containerPort: 8761
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8761
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8761
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-discovery
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-discovery
+  ports:
+  - port: 8761
+    targetPort: 8761
+  type: ClusterIP
+
+---
+# ===========================================
+# API Gateway
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-gateway
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-gateway
+    tier: frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: smartshopai-gateway
+  template:
+    metadata:
+      labels:
+        app: smartshopai-gateway
+    spec:
+      containers:
+      - name: gateway
+        image: ghcr.io/smartshopai/smartshopai-gateway:IMAGE_TAG
+        ports:
+        - containerPort: 8080
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-gateway
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-gateway
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: LoadBalancer
+
+---
+# ===========================================
+# User Service
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-user-service
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-user-service
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: smartshopai-user-service
+  template:
+    metadata:
+      labels:
+        app: smartshopai-user-service
+    spec:
+      containers:
+      - name: user-service
+        image: ghcr.io/smartshopai/smartshopai-user-service:IMAGE_TAG
+        ports:
+        - containerPort: 8081
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_PORT
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: jwt-secret
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-user-service
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-user-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+  type: ClusterIP
+
+---
+# ===========================================
+# Product Service
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-product-service
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-product-service
+    tier: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: smartshopai-product-service
+  template:
+    metadata:
+      labels:
+        app: smartshopai-product-service
+    spec:
+      containers:
+      - name: product-service
+        image: ghcr.io/smartshopai/smartshopai-product-service:IMAGE_TAG
+        ports:
+        - containerPort: 8082
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_PORT
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: openai-api-key
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-product-service
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-product-service
+  ports:
+  - port: 8082
+    targetPort: 8082
+  type: ClusterIP
+
+---
+# ===========================================
+# AI Analysis Service
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-ai-analysis-service
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-ai-analysis-service
+    tier: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartshopai-ai-analysis-service
+  template:
+    metadata:
+      labels:
+        app: smartshopai-ai-analysis-service
+    spec:
+      containers:
+      - name: ai-analysis-service
+        image: ghcr.io/smartshopai/smartshopai-ai-analysis-service:IMAGE_TAG
+        ports:
+        - containerPort: 8083
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_PORT
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: openai-api-key
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8083
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8083
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-ai-analysis-service
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-ai-analysis-service
+  ports:
+  - port: 8083
+    targetPort: 8083
+  type: ClusterIP
+
+---
+# ===========================================
+# AI Recommendation Service
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-ai-recommendation-service
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-ai-recommendation-service
+    tier: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartshopai-ai-recommendation-service
+  template:
+    metadata:
+      labels:
+        app: smartshopai-ai-recommendation-service
+    spec:
+      containers:
+      - name: ai-recommendation-service
+        image: ghcr.io/smartshopai/smartshopai-ai-recommendation-service:IMAGE_TAG
+        ports:
+        - containerPort: 8087
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_PORT
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: openai-api-key
+        - name: PINECONE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: pinecone-api-key
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8087
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8087
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-ai-recommendation-service
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-ai-recommendation-service
+  ports:
+  - port: 8087
+    targetPort: 8087
+  type: ClusterIP
+
+---
+# ===========================================
+# AI Search Service
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-ai-search-service
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-ai-search-service
+    tier: ai
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartshopai-ai-search-service
+  template:
+    metadata:
+      labels:
+        app: smartshopai-ai-search-service
+    spec:
+      containers:
+      - name: ai-search-service
+        image: ghcr.io/smartshopai/smartshopai-ai-search-service:IMAGE_TAG
+        ports:
+        - containerPort: 8088
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_PORT
+        - name: ELASTICSEARCH_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: ELASTICSEARCH_HOST
+        - name: ELASTICSEARCH_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: ELASTICSEARCH_PORT
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: openai-api-key
+        - name: WEAVIATE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: weaviate-api-key
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8088
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8088
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-ai-search-service
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-ai-search-service
+  ports:
+  - port: 8088
+    targetPort: 8088
+  type: ClusterIP
+
+---
+# ===========================================
+# Notification Service
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-notification-service
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-notification-service
+    tier: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smartshopai-notification-service
+  template:
+    metadata:
+      labels:
+        app: smartshopai-notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: ghcr.io/smartshopai/smartshopai-notification-service:IMAGE_TAG
+        ports:
+        - containerPort: 8084
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_PORT
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        - name: TWILIO_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: twilio-api-key
+        - name: TWILIO_API_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: smartshopai-secrets
+              key: twilio-api-secret
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8084
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-notification-service
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-notification-service
+  ports:
+  - port: 8084
+    targetPort: 8084
+  type: ClusterIP
+
+---
+# ===========================================
+# Monitoring Service
+# ===========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartshopai-monitoring
+  namespace: smartshopai-production
+  labels:
+    app: smartshopai-monitoring
+    tier: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartshopai-monitoring
+  template:
+    metadata:
+      labels:
+        app: smartshopai-monitoring
+    spec:
+      containers:
+      - name: monitoring
+        image: ghcr.io/smartshopai/smartshopai-monitoring:IMAGE_TAG
+        ports:
+        - containerPort: 8085
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "production"
+        - name: MONGODB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_HOST
+        - name: MONGODB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_PORT
+        - name: MONGODB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: MONGODB_DATABASE
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: REDIS_PORT
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: smartshopai-config
+              key: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8085
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8085
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartshopai-monitoring
+  namespace: smartshopai-production
+spec:
+  selector:
+    app: smartshopai-monitoring
+  ports:
+  - port: 8085
+    targetPort: 8085
+  type: ClusterIP
+
+---
+# ===========================================
+# Ingress for External Access
+# ===========================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: smartshopai-ingress
+  namespace: smartshopai-production
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+spec:
+  tls:
+  - hosts:
+    - api.smartshopai.com
+    secretName: smartshopai-tls
+  rules:
+  - host: api.smartshopai.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: smartshopai-gateway
+            port:
+              number: 80

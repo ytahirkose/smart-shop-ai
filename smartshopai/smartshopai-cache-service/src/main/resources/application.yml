@@ -1,0 +1,67 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: smartshopai-cache-service
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  cache:
+    type: redis
+    redis:
+      time-to-live: 3600000 # 1 hour default
+      cache-null-values: false
+      use-key-prefix: true
+      key-prefix: "smartshopai:"
+    cache-names:
+      - users
+      - products
+      - recommendations
+      - analysis
+      - search
+      - notifications
+      - analytics
+
+# JWT Configuration
+jwt:
+  secret: your-secret-key-here-make-it-long-and-secure-in-production
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+
+# Cache Configuration
+cache:
+  default-ttl: 3600 # 1 hour in seconds
+  max-size: 10000
+  eviction-policy: LRU
+  statistics:
+    enabled: true
+    update-interval: 60 # seconds
+
+# Logging
+logging:
+  level:
+    com.smartshopai.cache: DEBUG
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,caches
+  endpoint:
+    health:
+      show-details: always
+    caches:
+      enabled: true

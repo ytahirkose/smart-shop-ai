@@ -1,0 +1,130 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.0' apply false
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.graalvm.buildtools.native' version '0.10.0' apply false
+    id 'org.sonarqube' version '4.4.1.3373'
+    id 'jacoco'
+}
+
+ext {
+    set('springCloudVersion', "2023.0.2")
+    set('springBootVersion', "3.3.0")
+    set('springAiVersion', "1.0.0-M3")
+    set('springSecurityVersion', "6.3.1")
+    set('mongodbVersion', "8.0.0")
+    set('redisVersion', "7.4.0")
+    set('kafkaVersion', "3.7.0")
+    set('elasticsearchVersion', "8.13.0")
+    set('openaiVersion', "0.20.0")
+    set('jwtVersion', "0.11.5")
+    set('mapstructVersion', "1.5.5.Final")
+    set('lombokVersion', "1.18.32")
+    set('micrometerVersion', "1.13.0")
+    set('resilience4jVersion', "3.0.0")
+    set('testcontainersVersion', "1.20.0")
+    set('seleniumVersion', "4.18.0")
+    set('playwrightVersion', "1.42.0")
+    set('bucket4jVersion', "8.8.0")
+    set('springdocVersion', "2.5.0")
+    set('langchain4jVersion', "0.27.0")
+    set('pineconeVersion', "0.1.0")
+    set('weaviateVersion', "4.4.0")
+}
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.spring.dependency-management'
+
+    sourceCompatibility = '21'
+
+    group = 'com.smartshopai'
+    version = '1.0.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+        maven { url 'https://repo.spring.io/milestone' }
+        maven { url 'https://repo.spring.io/snapshot' }
+        maven { url 'https://repo.spring.io/spring-ai' }
+    }
+}
+
+subprojects {
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'java-library'
+
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+            mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+        }
+    }
+
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter'
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+        implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+        // Lombok & MapStruct
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+        implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+        annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+        // Persistence API
+        implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+
+        // API Documentation
+        implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+        
+        // Micrometer
+        implementation "io.micrometer:micrometer-tracing-bridge-brave"
+        implementation "io.zipkin.reporter2:zipkin-reporter-brave"
+
+        // Test Dependencies
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testImplementation "org.testcontainers:junit-jupiter"
+        testImplementation "org.testcontainers:mongodb"
+        testImplementation "org.testcontainers:elasticsearch"
+        testImplementation "org.testcontainers:kafka"
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}
+
+task testReport(type: TestReport) {
+    destinationDir = file("$buildDir/reports/tests")
+    reportOn subprojects.collect { it.tasks.withType(Test) }
+}
+
+task jacocoRootReport(type: JacocoReport) {
+    dependsOn subprojects.collect { it.tasks.withType(Test) }
+    sourceDirectories.setFrom(files(subprojects.sourceSets.main.allSource.srcDirs))
+    classDirectories.setFrom(files(subprojects.sourceSets.main.output))
+    // Collect execution data only from subprojects that apply Jacoco
+    executionData.setFrom(files(subprojects.collect { proj ->
+        def task = proj.tasks.findByName('jacocoTestReport')
+        return task != null ? task.executionData : []
+    }))
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+sonarqube {
+    properties {
+        property "sonar.projectKey", "smartshopai"
+        property "sonar.organization", "smartshopai"
+        property "sonar.host.url", "http://localhost:9000"
+    }
+}
+
+
+
+
+
+

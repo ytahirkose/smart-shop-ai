@@ -1,0 +1,82 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: smartshopai-notification-service
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: smartshopai_notification
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:your-email@gmail.com}
+    password: ${MAIL_PASSWORD:your-app-password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+# JWT Configuration
+jwt:
+  secret: your-secret-key-here-make-it-long-and-secure-in-production
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+
+# Notification Configuration
+notification:
+  email:
+    enabled: true
+    from-address: ${MAIL_USERNAME:your-email@gmail.com}
+    reply-to: noreply@smartshopai.com
+  sms:
+    enabled: false
+    provider: twilio
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from-number: ${TWILIO_FROM_NUMBER:}
+  push:
+    enabled: false
+    firebase:
+      project-id: ${FIREBASE_PROJECT_ID:}
+      private-key-id: ${FIREBASE_PRIVATE_KEY_ID:}
+      private-key: ${FIREBASE_PRIVATE_KEY:}
+      client-email: ${FIREBASE_CLIENT_EMAIL:}
+      client-id: ${FIREBASE_CLIENT_ID:}
+  templates:
+    welcome: welcome-email-template
+    price-alert: price-alert-template
+    order-confirmation: order-confirmation-template
+    password-reset: password-reset-template
+
+# Logging
+logging:
+  level:
+    com.smartshopai.notification: DEBUG
+    org.springframework.mail: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

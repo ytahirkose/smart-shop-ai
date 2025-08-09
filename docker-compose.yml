@@ -1,0 +1,296 @@
+version: '3.8'
+
+services:
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: smartshopai-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: smartshopai
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+
+  # Redis
+  redis:
+    image: redis:7.2-alpine
+    container_name: smartshopai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # Discovery Service
+  discovery-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-discovery
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+    depends_on:
+      - mongodb
+      - redis
+    command: ["discovery"]
+
+  # Gateway Service
+  gateway-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["gateway"]
+
+  # User Service
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-user
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["user"]
+
+  # Product Service
+  product-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-product
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["product"]
+
+  # AI Analysis Service
+  ai-analysis-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-ai-analysis
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      OPENAI_API_KEY: ${OPENAI_API_KEY:sk-dummy-key-for-development}
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["ai-analysis"]
+
+  # AI Recommendation Service
+  ai-recommendation-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-ai-recommendation
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      OPENAI_API_KEY: ${OPENAI_API_KEY:sk-dummy-key-for-development}
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["ai-recommendation"]
+
+  # AI Search Service
+  ai-search-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-ai-search
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      OPENAI_API_KEY: ${OPENAI_API_KEY:sk-dummy-key-for-development}
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["ai-search"]
+
+  # Cache Service
+  cache-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-cache
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - redis
+    command: ["cache"]
+
+  # Notification Service
+  notification-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-notification
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      MAIL_USERNAME: ${MAIL_USERNAME:}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:}
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["notification"]
+
+  # Monitoring Service
+  monitoring-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-monitoring
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["monitoring"]
+
+  # Business Intelligence Service
+  business-intelligence-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-business-intelligence
+    restart: unless-stopped
+    ports:
+      - "8089:8088"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["business-intelligence"]
+
+  # Session Cache Service
+  session-cache-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartshopai-session-cache
+    restart: unless-stopped
+    ports:
+      - "8090:8087"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_MONGODB_HOST: mongodb
+      SPRING_DATA_MONGODB_PORT: 27017
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+    depends_on:
+      - discovery-service
+      - mongodb
+      - redis
+    command: ["session-cache"]
+
+volumes:
+  mongodb_data:
+  redis_data:

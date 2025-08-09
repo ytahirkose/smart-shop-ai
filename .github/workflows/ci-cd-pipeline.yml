@@ -1,0 +1,405 @@
+name: SmartShopAI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ===========================================
+  # Code Quality & Security
+  # ===========================================
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run SonarQube Analysis
+        uses: sonarqube-quality-gate-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          scannerHome: ${{ github.workspace }}/.sonar/scanner
+          args: >
+            -Dsonar.projectKey=smartshopai
+            -Dsonar.sources=.
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }}
+
+      - name: Run Security Scan
+        uses: snyk/actions/gradle@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Run Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'SmartShopAI'
+          path: '.'
+          format: 'HTML'
+          out: 'reports'
+
+  # ===========================================
+  # Build & Test
+  # ===========================================
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    needs: code-quality
+    strategy:
+      matrix:
+        service: [
+          'smartshopai-discovery',
+          'smartshopai-gateway',
+          'smartshopai-user-service',
+          'smartshopai-product-service',
+          'smartshopai-ai-analysis-service',
+          'smartshopai-ai-recommendation-service',
+          'smartshopai-ai-search-service',
+          'smartshopai-notification-service',
+          'smartshopai-monitoring'
+        ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build ${{ matrix.service }}
+        run: |
+          cd smartshopai/${{ matrix.service }}
+          ./gradlew build -x test
+
+      - name: Run Tests
+        run: |
+          cd smartshopai/${{ matrix.service }}
+          ./gradlew test
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.service }}
+          path: smartshopai/${{ matrix.service }}/build/test-results/
+          retention-days: 30
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ matrix.service }}
+          path: smartshopai/${{ matrix.service }}/build/reports/jacoco/
+          retention-days: 30
+
+  # ===========================================
+  # Integration Tests
+  # ===========================================
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    services:
+      mongodb:
+        image: mongo:8.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7.4
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Run Integration Tests
+        run: |
+          cd smartshopai
+          ./gradlew integrationTest
+
+      - name: Upload Integration Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: smartshopai/build/test-results/
+          retention-days: 30
+
+  # ===========================================
+  # Docker Build & Push
+  # ===========================================
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [build-and-test, integration-tests]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    strategy:
+      matrix:
+        service: [
+          'smartshopai-discovery',
+          'smartshopai-gateway',
+          'smartshopai-user-service',
+          'smartshopai-product-service',
+          'smartshopai-ai-analysis-service',
+          'smartshopai-ai-recommendation-service',
+          'smartshopai-ai-search-service',
+          'smartshopai-notification-service',
+          'smartshopai-monitoring'
+        ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./smartshopai/${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================
+  # Deploy to Staging
+  # ===========================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy to Staging
+        run: |
+          # Update image tags in Helm charts
+          find k8s/staging -name "*.yaml" -exec sed -i "s|IMAGE_TAG|${{ github.sha }}|g" {} \;
+          
+          # Apply Kubernetes manifests
+          kubectl apply -f k8s/staging/
+          
+          # Wait for deployment
+          kubectl rollout status deployment/smartshopai-gateway -n smartshopai-staging --timeout=300s
+
+      - name: Run Smoke Tests
+        run: |
+          # Wait for services to be ready
+          sleep 60
+          
+          # Run basic health checks
+          curl -f http://staging.smartshopai.com/actuator/health || exit 1
+
+  # ===========================================
+  # Deploy to Production
+  # ===========================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=kubeconfig
+
+      - name: Deploy to Production
+        run: |
+          # Update image tags in Helm charts
+          find k8s/production -name "*.yaml" -exec sed -i "s|IMAGE_TAG|${{ github.sha }}|g" {} \;
+          
+          # Apply Kubernetes manifests
+          kubectl apply -f k8s/production/
+          
+          # Wait for deployment
+          kubectl rollout status deployment/smartshopai-gateway -n smartshopai-production --timeout=300s
+
+      - name: Run Production Tests
+        run: |
+          # Wait for services to be ready
+          sleep 120
+          
+          # Run comprehensive health checks
+          curl -f https://api.smartshopai.com/actuator/health || exit 1
+          
+          # Run performance tests
+          ./scripts/performance-test.sh
+
+      - name: Notify Deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        if: always()
+
+  # ===========================================
+  # Security & Compliance
+  # ===========================================
+  security-compliance:
+    name: Security & Compliance
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Security Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run Compliance Check
+        run: |
+          # Check for security compliance
+          ./scripts/compliance-check.sh
+
+  # ===========================================
+  # Performance Monitoring
+  # ===========================================
+  performance-monitoring:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Performance Tests
+        run: |
+          # Run JMeter tests
+          jmeter -n -t tests/performance/smartshopai-performance.jmx -l results.jtl
+          
+          # Generate performance report
+          jmeter -g results.jtl -o performance-report
+
+      - name: Upload Performance Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report
+          path: performance-report/
+          retention-days: 90
+
+      - name: Send Performance Alert
+        uses: 8398a7/action-slack@v3
+        if: failure()
+        with:
+          status: ${{ job.status }}
+          channel: '#performance'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

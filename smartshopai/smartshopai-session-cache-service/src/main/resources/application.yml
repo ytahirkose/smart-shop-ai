@@ -1,0 +1,76 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: smartshopai-session-cache-service
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: smartshopai_session_cache
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+# JWT Configuration
+jwt:
+  secret: your-secret-key-here-make-it-long-and-secure-in-production
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+
+# Session Configuration
+session:
+  timeout-minutes: 30
+  cleanup-interval: 300000 # 5 minutes in milliseconds
+  max-sessions-per-user: 5
+  tracking:
+    enabled: true
+    track-page-views: true
+    track-clicks: true
+    track-searches: true
+    track-product-views: true
+  analytics:
+    enabled: true
+    real-time-metrics: true
+    export-formats:
+      - csv
+      - json
+      - excel
+
+# Cache Configuration
+cache:
+  session:
+    ttl: 1800 # 30 minutes in seconds
+    max-size: 10000
+    eviction-policy: LRU
+  redis:
+    key-prefix: "session:"
+    user-sessions-prefix: "user_sessions:"
+
+# Logging
+logging:
+  level:
+    com.smartshopai.sessioncache: DEBUG
+    org.springframework.data.redis: DEBUG
+    org.springframework.data.mongodb: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,sessions
+  endpoint:
+    health:
+      show-details: always
+    sessions:
+      enabled: true

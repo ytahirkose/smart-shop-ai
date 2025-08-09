@@ -1,0 +1,133 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: smartshopai-ai-search-service
+  config:
+    import: "optional:configserver:"
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: smartshopai_ai_search
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:sk-dummy-key-for-development}
+      base-url: https://api.openai.com
+      chat:
+        options:
+          model: gpt-4
+          temperature: 0.7
+          max-tokens: 1000
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: llama2
+          temperature: 0.7
+    vertex:
+      project-id: ${GOOGLE_CLOUD_PROJECT:smartshopai-project}
+      location: us-central1
+    azure:
+      openai:
+        endpoint: ${AZURE_OPENAI_ENDPOINT:https://smartshopai.openai.azure.com}
+        api-key: ${AZURE_OPENAI_API_KEY:dummy-key-for-development}
+        deployment-name: gpt-4
+
+# JWT Configuration
+jwt:
+  secret: your-secret-key-here-make-it-long-and-secure-in-production
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+
+# LangChain4j Configuration
+langchain4j:
+  open-ai:
+    api-key: ${OPENAI_API_KEY:sk-dummy-key-for-development}
+    base-url: https://api.openai.com
+    timeout: 60s
+    max-retries: 3
+
+# Vector Database Configuration
+vector:
+  pinecone:
+    api-key: ${PINECONE_API_KEY:dummy-key-for-development}
+    environment: us-west1-gcp
+    project-name: smartshopai
+  weaviate:
+    url: ${WEAVIATE_URL:http://localhost:8080}
+    api-key: ${WEAVIATE_API_KEY:dummy-key-for-development}
+
+# Search Configuration
+search:
+  max-results: 20
+  similarity-threshold: 0.6
+  semantic-search:
+    enabled: true
+    embedding-model: all-minilm-l6-v2
+  hybrid-search:
+    enabled: true
+    keyword-weight: 0.3
+    semantic-weight: 0.7
+  filters:
+    price-range: true
+    category: true
+    brand: true
+    rating: true
+
+# Logging
+logging:
+  level:
+    com.smartshopai.ai.search: DEBUG
+    org.springframework.ai: DEBUG
+    dev.langchain4j: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Eureka Client
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    lease-expiration-duration-in-seconds: 90
+
+# Circuit Breaker
+resilience4j:
+  circuitbreaker:
+    instances:
+      search-api:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      search-api:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException

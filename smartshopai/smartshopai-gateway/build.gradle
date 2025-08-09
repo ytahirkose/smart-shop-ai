@@ -1,0 +1,16 @@
+dependencies {
+    // Spring Cloud
+    implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
+    // Security & JWT
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
+    implementation "com.github.vladimir-bukhtoyarov:bucket4j-core:${bucket4jVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}

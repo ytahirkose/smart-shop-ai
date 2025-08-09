@@ -1,0 +1,76 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: smartshopai-business-intelligence-service
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: smartshopai_business_intelligence
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+# JWT Configuration
+jwt:
+  secret: your-secret-key-here-make-it-long-and-secure-in-production
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+
+# Analytics Configuration
+analytics:
+  tracking:
+    enabled: true
+    batch-size: 100
+    flush-interval: 30 # seconds
+  metrics:
+    retention-days: 90
+    aggregation-intervals:
+      - 1h
+      - 1d
+      - 1w
+      - 1m
+  export:
+    formats:
+      - csv
+      - json
+      - excel
+    max-records: 10000
+
+# Dashboard Configuration
+dashboard:
+  refresh-interval: 60 # seconds
+  max-data-points: 1000
+  real-time:
+    enabled: true
+    websocket:
+      endpoint: /ws/dashboard
+      allowed-origins: "*"
+
+# Logging
+logging:
+  level:
+    com.smartshopai.businessintelligence: DEBUG
+    org.springframework.data.mongodb: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Management endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,analytics
+  endpoint:
+    health:
+      show-details: always
+    analytics:
+      enabled: true
