@@ -4,6 +4,7 @@ server:
 spring:
   application:
     name: smartshopai-cache-service
+  # Redis ayarları (deprecated olanlar düzeltildi)
   data:
     redis:
       host: localhost

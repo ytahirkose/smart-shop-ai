@@ -40,7 +40,7 @@ public class UserService {
         log.info("Attempting to create a new user with username: {}", user.getUsername());
 
         if (userRepository.findByUsername(user.getUsername()).isPresent() || userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new RuntimeException("A user with this username or email already exists.");
+            throw new UserAlreadyExistsException("A user with this username or email already exists.");
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
@@ -85,36 +85,47 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
-    public User getUserById(String id) {
-        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    public Optional<User> getUserById(String id) {
+        return userRepository.findById(id);
     }
 
+    /**
+     * Username veya email ile kullanıcıyı bulur (Optional)
+     */
+    public Optional<User> getUserByIdOrEmail(String idOrEmail) {
+        Optional<User> byId = userRepository.findById(idOrEmail);
+        if (byId.isPresent()) return byId;
+        return userRepository.findByEmail(idOrEmail);
+    }
+
+    /**
+     * Kullanıcıya premium rolü tanımlar (Set, HashSet kullanımı)
+     */
     @Transactional
     public void grantPremiumRole(String userId) {
         log.info("Attempting to grant PREMIUM role to user ID: {}", userId);
-        User user = getUserById(userId);
-
+        User user = getUserById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         Set<String> roles = new HashSet<>(user.getRoles());
         roles.add("ROLE_PREMIUM");
         user.setRoles(roles);
-
         userRepository.save(user);
         log.info("Successfully granted PREMIUM role to user ID: {}", userId);
     }
 
+    /**
+     * Kullanıcı ürün görüntüleme geçmişini günceller (List, sliding window)
+     */
     @Transactional
     public void trackProductView(String userId, String productId) {
-        User user = getUserById(userId);
+        User user = getUserById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         UserBehaviorMetrics metrics = user.getUserBehaviorMetrics();
         if (metrics == null) {
             metrics = new UserBehaviorMetrics();
             metrics.initializeDefaults();
             user.setUserBehaviorMetrics(metrics);
         }
-
         metrics.setTotalProductViews(metrics.getTotalProductViews() + 1);
         metrics.getViewedProducts().merge(productId, 1, Integer::sum);
-        
         // Update recent views with sliding window
         List<String> recentViews = metrics.getRecentViewedProductIds();
         recentViews.remove(productId); // Remove if exists to move it to the front
@@ -122,24 +133,24 @@ public class UserService {
         if (recentViews.size() > MAX_HISTORY_SIZE) {
             recentViews.remove(MAX_HISTORY_SIZE);
         }
-
         userRepository.save(user);
         log.debug("Tracked product view for user {} and product {}", userId, productId);
     }
 
+    /**
+     * Kullanıcı arama geçmişini günceller (List, sliding window)
+     */
     @Transactional
     public void trackSearch(String userId, String searchQuery) {
-        User user = getUserById(userId);
+        User user = getUserById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         UserBehaviorMetrics metrics = user.getUserBehaviorMetrics();
         if (metrics == null) {
             metrics = new UserBehaviorMetrics();
             metrics.initializeDefaults();
             user.setUserBehaviorMetrics(metrics);
         }
-
         metrics.setTotalSearches(metrics.getTotalSearches() + 1);
         metrics.getSearchKeywords().merge(searchQuery.toLowerCase(), 1, Integer::sum);
-
         // Update recent searches with sliding window
         List<String> recentSearches = metrics.getRecentSearchQueries();
         recentSearches.remove(searchQuery);
@@ -147,7 +158,6 @@ public class UserService {
         if (recentSearches.size() > MAX_HISTORY_SIZE) {
             recentSearches.remove(MAX_HISTORY_SIZE);
         }
-
         userRepository.save(user);
         log.debug("Tracked search for user {} with query '{}'", userId, searchQuery);
     }
@@ -175,7 +185,7 @@ public class UserService {
 
     @Transactional
     public UserProfile updateUserProfile(String userId, UserProfile profileUpdate) {
-        User user = getUserById(userId);
+        User user = getUserById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         profileUpdate.setId(user.getUserProfile() != null ? user.getUserProfile().getId() : null);
         profileUpdate.setUpdatedAt(LocalDateTime.now());
         UserProfile saved = userProfileRepository.save(profileUpdate);
@@ -185,7 +195,7 @@ public class UserService {
     }
 
     public UserProfile getUserProfile(String userId) {
-        User user = getUserById(userId);
+        User user = getUserById(userId).orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
         return user.getUserProfile();
     }
 

@@ -22,96 +22,25 @@ public class AISearchEngineService {
     private final ChatClient.Builder chatClientBuilder;
 
     public SearchResult performSemanticSearch(SearchRequest request) {
-        log.info("Performing semantic search for query: {}", request.getQuery());
-        
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            // Create semantic search prompt
-            String prompt = createSemanticSearchPrompt(request);
-            
-            // Generate AI search using Spring AI
-            String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
-            
-            // Create search result
-            SearchResult result = SearchResult.builder()
-                    .searchRequestId(request.getId())
-                    .userId(request.getUserId())
-                    .query(request.getQuery())
-                    .searchType(request.getSearchType())
-                    .context(request.getContext())
-                    .products(parseSearchResults(aiResponse))
-                    .confidenceScore(calculateRelevanceScore(aiResponse))
-                    .aiModel("spring-ai-openai")
-                    .tokensUsed(estimateTokens(aiResponse))
-                    .processingTimeMs(System.currentTimeMillis() - startTime)
-                    .status("ACTIVE")
-                    .aiAnalysisCompleted(true)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            
-            log.info("Semantic search completed for query: {}", request.getQuery());
-            return result;
-            
-        } catch (Exception e) {
-            log.error("Error performing semantic search for query: {}", request.getQuery(), e);
-            throw new com.smartshopai.common.exception.BusinessException("Semantic search failed", e);
-        }
+        String prompt = createSemanticSearchPrompt(request);
+        return runSearch(request, prompt, "Semantic search");
     }
 
     public SearchResult performHybridSearch(SearchRequest request) {
-        log.info("Performing hybrid search for query: {}", request.getQuery());
-        
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            // Create hybrid search prompt (combines semantic and keyword search)
-            String prompt = createHybridSearchPrompt(request);
-            
-            // Generate AI search using Spring AI
-            String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
-            
-            // Create search result
-            SearchResult result = SearchResult.builder()
-                    .searchRequestId(request.getId())
-                    .userId(request.getUserId())
-                    .query(request.getQuery())
-                    .searchType(request.getSearchType())
-                    .context(request.getContext())
-                    .products(parseSearchResults(aiResponse))
-                    .confidenceScore(calculateRelevanceScore(aiResponse))
-                    .aiModel("spring-ai-openai")
-                    .tokensUsed(estimateTokens(aiResponse))
-                    .processingTimeMs(System.currentTimeMillis() - startTime)
-                    .status("ACTIVE")
-                    .aiAnalysisCompleted(true)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            
-            log.info("Hybrid search completed for query: {}", request.getQuery());
-            return result;
-            
-        } catch (Exception e) {
-            log.error("Error performing hybrid search for query: {}", request.getQuery(), e);
-            throw new com.smartshopai.common.exception.BusinessException("Hybrid search failed", e);
-        }
+        String prompt = createHybridSearchPrompt(request);
+        return runSearch(request, prompt, "Hybrid search");
     }
 
     public SearchResult performFilteredSearch(SearchRequest request) {
-        log.info("Performing filtered search for query: {}", request.getQuery());
-        
+        String prompt = createFilteredSearchPrompt(request);
+        return runSearch(request, prompt, "Filtered search");
+    }
+
+    private SearchResult runSearch(SearchRequest request, String prompt, String searchTypeLog) {
+        log.info("Performing {} for query: {}", searchTypeLog, request.getQuery());
         long startTime = System.currentTimeMillis();
-        
         try {
-            // Create filtered search prompt
-            String prompt = createFilteredSearchPrompt(request);
-            
-            // Generate AI search using Spring AI
             String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
-            
-            // Create search result
             SearchResult result = SearchResult.builder()
                     .searchRequestId(request.getId())
                     .userId(request.getUserId())
@@ -128,13 +57,11 @@ public class AISearchEngineService {
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
-            
-            log.info("Filtered search completed for query: {}", request.getQuery());
+            log.info("{} completed for query: {}", searchTypeLog, request.getQuery());
             return result;
-            
         } catch (Exception e) {
-            log.error("Error performing filtered search for query: {}", request.getQuery(), e);
-            throw new com.smartshopai.common.exception.BusinessException("Filtered search failed", e);
+            log.error("Error performing {} for query: {}", searchTypeLog, request.getQuery(), e);
+            throw new com.smartshopai.common.exception.BusinessException(searchTypeLog + " failed", e);
         }
     }
 

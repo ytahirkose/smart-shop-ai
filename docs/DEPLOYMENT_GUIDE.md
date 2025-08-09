@@ -1249,3 +1249,22 @@ kubectl logs -f deployment/smartshopai-gateway
 - **Infrastructure Issues**: infrastructure@smartshopai.com
 - **Security Issues**: security@smartshopai.com
 - **Emergency**: +1-555-EMERGENCY
+
+## CI/CD Pipeline Secrets ve Environment Variables
+
+Aşağıdaki secrets ve environment variable'lar GitHub Actions ve production ortamı için gereklidir:
+
+| Name                | Açıklama                                      |
+|---------------------|-----------------------------------------------|
+| SONAR_TOKEN         | SonarQube API tokenu                          |
+| SONAR_HOST_URL      | SonarQube sunucu adresi                       |
+| SNYK_TOKEN          | Snyk API tokenu                               |
+| SLACK_WEBHOOK       | Slack kanal webhook URL'si                    |
+| GITHUB_TOKEN        | GitHub Actions için otomatik olarak gelir     |
+| PRODUCTION_KUBECONFIG | Production K8s erişimi için base64 config   |
+| DOCKER_REGISTRY     | Docker registry adresi (örn: ghcr.io)         |
+| DOCKER_USERNAME     | Docker registry kullanıcı adı                 |
+| DOCKER_PASSWORD     | Docker registry şifresi/tokenu                |
+| JWT_SECRET          | PROD ortamda güçlü JWT secret                 |
+
+> **Not:** Tüm secret'lar GitHub repo ayarlarından `Settings > Secrets and variables > Actions` altında eklenmelidir.

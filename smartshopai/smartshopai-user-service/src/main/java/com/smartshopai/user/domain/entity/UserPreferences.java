@@ -9,7 +9,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @Builder
@@ -41,4 +40,46 @@ public class UserPreferences {
     // Timestamps
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // --- ADDED FIELDS FOR REPOSITORY COMPATIBILITY ---
+    /**
+     * Kullanıcı ID'si (referans için)
+     */
+    private String userId;
+
+    /**
+     * AI tabanlı öneriler aktif mi?
+     */
+    @Builder.Default
+    private boolean aiRecommendationsEnabled = true;
+
+    /**
+     * AI davranış analizi aktif mi?
+     */
+    @Builder.Default
+    private boolean aiBehaviorAnalysisEnabled = false;
+
+    /**
+     * AI kişiselleştirme aktif mi?
+     */
+    @Builder.Default
+    private boolean aiPersonalizationEnabled = false;
+
+    /**
+     * Veri paylaşımı aktif mi?
+     */
+    @Builder.Default
+    private boolean dataSharingEnabled = false;
+
+    /**
+     * Kişiselleştirilmiş reklamlar aktif mi?
+     */
+    @Builder.Default
+    private boolean personalizedAdsEnabled = false;
+
+    /**
+     * Kullanıcı tercihleri tamamlandı mı?
+     */
+    @Builder.Default
+    private boolean preferencesCompleted = false;
 }

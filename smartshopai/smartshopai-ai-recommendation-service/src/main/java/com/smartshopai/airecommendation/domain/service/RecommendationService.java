@@ -30,24 +30,27 @@ public class RecommendationService {
     private final ChatModel chatModel;
     private final EmbeddingModel embeddingModel;
 
+    /**
+     * Hiper-kişiselleştirilmiş öneri üret (embedding, prompt, stream, koleksiyon kullanımı)
+     */
     public String getPersonalizedRecommendations(String userId, Set<String> roles) {
         log.info("Generating HYPER-PERSONALIZED recommendations for user ID: {} with roles: {}", userId, roles);
-
         boolean isPremiumUser = roles.contains("ROLE_PREMIUM");
         int topK = isPremiumUser ? 10 : 5;
 
+        // Kullanıcı ve davranış verilerini çek
         UserDto user = userServiceClient.getUserById(userId);
         String userPreferencesText = convertPreferencesToString(user);
         String userBehaviorText = convertBehaviorToString(user);
-
         String combinedInfo = userPreferencesText + " " + userBehaviorText;
+
+        // Embedding oluştur
         float[] rawEmb = embeddingModel.embed(combinedInfo);
         List<Double> userEmbedding = new java.util.ArrayList<>(rawEmb.length);
-        for (float f : rawEmb) {
-            userEmbedding.add((double) f);
-        }
+        for (float f : rawEmb) userEmbedding.add((double) f);
         log.info("Generated combined embedding for user ID: {}", userId);
 
+        // Benzer ürünleri bul
         List<ProductAnalysisDto> similarProducts = analysisServiceClient.findSimilarProducts(userEmbedding, topK);
         if (similarProducts.isEmpty()) {
             return "We are still getting to know you! Based on your profile and activity, we couldn't find a perfect match yet. Please add more preferences or browse some products for better recommendations.";
@@ -56,6 +59,7 @@ public class RecommendationService {
                 .map(ProductAnalysisDto::getProductId)
                 .collect(Collectors.joining(", "));
 
+        // Prompt oluştur ve LLM'e gönder
         String promptString = """
             You are 'SmartShopAI', a hyper-intelligent and perceptive shopping assistant.
             You have deep knowledge about a user's stated preferences AND their recent behavior. Your task is to synthesize this information into a truly personal and insightful recommendation.
@@ -72,7 +76,6 @@ public class RecommendationService {
             3.  Explicitly mention WHY you are recommending these products, referencing BOTH their preferences and recent actions. For example: "I know you prefer [preference], but I saw you were looking at [behavior], so you might also love this..."
             4.  Select the top {selectionCount} products from the list to highlight.
             """;
-        
         PromptTemplate promptTemplate = new PromptTemplate(promptString);
         Prompt prompt = promptTemplate.create(Map.of(
                 "userPreferences", Objects.toString(userPreferencesText, "No specific preferences provided."),
@@ -80,7 +83,6 @@ public class RecommendationService {
                 "productIds", Objects.toString(similarProductIds, "None"),
                 "selectionCount", isPremiumUser ? "3-4" : "1-2"
         ));
-        
         log.info("Sending final, behavior-driven prompt to LLM for user ID: {}", userId);
         return chatModel.call(prompt).getResult().getOutput().getContent();
     }

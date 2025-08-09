@@ -55,7 +55,6 @@ public class UserApplicationService {
 
     public Optional<UserResponse> getUserById(String userId) {
         log.debug("Getting user by ID: {}", userId);
-        
         Optional<User> user = userService.getUserById(userId);
         return user.map(userMapper::toResponse);
     }
@@ -90,14 +89,12 @@ public class UserApplicationService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        log.info("User login attempt for email: {}", request.getEmail());
-        
-        String token = userService.authenticateUser(request.getEmail(), request.getPassword());
-        
-        return LoginResponse.builder()
-                .token(token)
-                .message("Login successful")
-                .build();
+        log.info("User login attempt for: {}", request.getEmailOrUsername());
+        String token = userService.authenticateUser(request.getEmailOrUsername(), request.getPassword());
+        // Kullanıcıyı bul ve response'a ekle
+        Optional<User> userOpt = userService.getUserByIdOrEmail(request.getEmailOrUsername());
+        UserResponse userResponse = userOpt.map(userMapper::toResponse).orElse(null);
+        return LoginResponse.of(token, null, userResponse);
     }
 
     public UserProfileResponse updateProfile(String userId, UpdateProfileRequest request) {
@@ -116,10 +113,13 @@ public class UserApplicationService {
         return userMapper.toProfileResponse(profile);
     }
 
+    /**
+     * Kullanıcıya özel AI insight raporu üretir (prompt, Map, Objects, Optional kullanımı)
+     */
     public String getUserInsights(String userId) {
         log.info("Generating AI insights for user: {}", userId);
-        User user = userService.getUserById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-
+        Optional<User> userOpt = userService.getUserById(userId);
+        User user = userOpt.orElseThrow(() -> new RuntimeException("User not found"));
         String promptString = """
             You are a sharp-witted customer relationship management (CRM) analyst.
             Based on the data provided for a user, generate a brief, actionable insights report.
@@ -135,7 +135,6 @@ public class UserApplicationService {
 
             Generate the insights now.
             """;
-        
         PromptTemplate promptTemplate = new PromptTemplate(promptString);
         Prompt prompt = promptTemplate.create(Map.of(
                 "username", Objects.toString(user.getUsername(), "N/A"),
@@ -145,7 +144,7 @@ public class UserApplicationService {
                 "profile", Objects.toString(user.getUserProfile(), "No profile details"),
                 "preferences", Objects.toString(user.getUserPreferences(), "No preferences set")
         ));
-
-        return chatClient.call(prompt).getResult().getOutput().getContent();
+        // AI insight fonksiyonu örneği (iş planına uygun)
+        return chatClient.prompt(prompt).call().content();
     }
 }

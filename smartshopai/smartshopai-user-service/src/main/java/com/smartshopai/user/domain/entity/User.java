@@ -58,6 +58,39 @@ public class User implements UserDetails {
     @DBRef(lazy = true)
     private UserBehaviorMetrics userBehaviorMetrics;
 
+    // --- ADDED FIELDS FOR REPOSITORY COMPATIBILITY ---
+    /**
+     * Kullanıcının tercih ettiği kategoriler (AI öneri ve arama için)
+     */
+    private Set<String> preferredCategories;
+
+    /**
+     * Kullanıcının maksimum alışveriş bütçesi (AI öneri ve arama için)
+     */
+    private Double maxBudget;
+
+    /**
+     * Kullanıcının alışveriş tercihleri (AI öneri ve arama için)
+     */
+    private String shoppingPreferences;
+
+    /**
+     * Kullanıcının e-posta adresi doğrulandı mı?
+     */
+    @Builder.Default
+    private boolean emailVerified = false;
+
+    /**
+     * Kullanıcının telefon numarası doğrulandı mı?
+     */
+    @Builder.Default
+    private boolean phoneVerified = false;
+
+    /**
+     * Son giriş zamanı (login tracking)
+     */
+    private LocalDateTime lastLoginAt;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

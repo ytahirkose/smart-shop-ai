@@ -21,7 +21,7 @@ public class ProductDataCollectorService {
         log.info("Attempting to collect product data from URL: {}", url);
 
         ScraperStrategy strategy = scraperStrategies.stream()
-                .filter(s -> s.canHandle(url))
+                .filter(ScraperStrategy::canHandle)
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("No scraper strategy found for URL: " + url));
 

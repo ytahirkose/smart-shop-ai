@@ -9,6 +9,15 @@ spring:
       host: localhost
       port: 27017
       database: smartshopai_notification
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
   mail:
     host: smtp.gmail.com
     port: 587
@@ -20,15 +29,6 @@ spring:
           auth: true
           starttls:
             enable: true
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
 
 # JWT Configuration
 jwt:

@@ -11,15 +11,15 @@ spring:
       host: localhost
       port: 27017
       database: smartshopai_ai_recommendation
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:sk-dummy-key-for-development}

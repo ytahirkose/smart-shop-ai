@@ -14,6 +14,17 @@ public class AIClientConfig {
     public ChatModel primaryChatModel(@Qualifier("openAiChatModel") ChatModel openAiChatModel) {
         return openAiChatModel;
     }
+
+    @Bean
+    public org.springframework.ai.vectorstore.VectorStore vectorStore(org.springframework.ai.embedding.EmbeddingModel embeddingModel) {
+        // Basit bir in-memory vector store örneği (gelişmiş için Pinecone/Weaviate entegre edilebilir)
+        return new org.springframework.ai.vectorstore.SimpleVectorStore(embeddingModel);
+    }
+
+    @Bean
+    public org.springframework.ai.chat.client.ChatClient.Builder chatClientBuilder(@Qualifier("openAiChatModel") ChatModel chatModel) {
+        return org.springframework.ai.chat.client.ChatClient.builder(chatModel);
+    }
 }
 
 

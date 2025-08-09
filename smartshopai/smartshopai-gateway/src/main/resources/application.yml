@@ -13,15 +13,17 @@ spring:
     loadbalancer:
       ribbon:
         enabled: false
-  redis:
-    host: localhost
-    port: 6379
-    timeout: 2000ms
-    lettuce:
-      pool:
-        max-active: 8
-        max-idle: 8
-        min-idle: 0
+  # Redis ayarları (deprecated olanlar düzeltildi)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
 
 # JWT Configuration
 jwt:

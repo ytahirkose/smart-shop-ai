@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * AI Recommendation Engine Service
@@ -21,142 +20,52 @@ public class AIRecommendationEngineService {
 
     private final ChatClient.Builder chatClientBuilder;
 
-    public Recommendation generatePersonalizedRecommendations(Recommendation recommendation) {
-        log.info("Generating personalized recommendations for user: {}", recommendation.getUserId());
-        
+    private Recommendation runRecommendation(String prompt, Recommendation base, String userId, String requestType, String context, String productId) {
         long startTime = System.currentTimeMillis();
-        
         try {
-            // Create personalized recommendation prompt
-            String prompt = createPersonalizedPrompt(recommendation);
-            
-            // Generate AI recommendations using Spring AI
             String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
-            
-            // Parse AI response and update recommendation
-            recommendation.setRecommendationSummary(extractSummary(aiResponse));
-            recommendation.setReasoning(extractReasoning(aiResponse));
-            recommendation.setConfidenceScore(calculateConfidence(aiResponse));
-            recommendation.setAiModelUsed("spring-ai-openai");
-            recommendation.setTokensUsed(estimateTokens(aiResponse));
-            recommendation.setProcessingTimeMs(System.currentTimeMillis() - startTime);
-            
-            log.info("Personalized recommendations generated successfully for user: {}", recommendation.getUserId());
-            return recommendation;
-            
+            Recommendation.RecommendationBuilder builder = Recommendation.builder();
+            if (userId != null) builder.userId(userId);
+            if (requestType != null) builder.requestType(requestType);
+            if (context != null) builder.context(context);
+            if (productId != null) builder.productId(productId);
+            builder.recommendationSummary(extractSummary(aiResponse))
+                   .reasoning(extractReasoning(aiResponse))
+                   .confidenceScore(calculateConfidence(aiResponse))
+                   .aiModelUsed("spring-ai-openai")
+                   .tokensUsed(estimateTokens(aiResponse))
+                   .processingTimeMs(System.currentTimeMillis() - startTime)
+                   .createdAt(LocalDateTime.now())
+                   .updatedAt(LocalDateTime.now());
+            return builder.build();
         } catch (Exception e) {
-            log.error("Error generating personalized recommendations for user: {}", recommendation.getUserId(), e);
+            log.error("Error generating recommendation", e);
             throw new com.smartshopai.common.exception.BusinessException("Recommendation generation failed", e);
         }
     }
 
+    public Recommendation generatePersonalizedRecommendations(Recommendation recommendation) {
+        log.info("Generating personalized recommendations for user: {}", recommendation.getUserId());
+        String prompt = createPersonalizedPrompt(recommendation);
+        return runRecommendation(prompt, recommendation, null, null, null, null);
+    }
+
     public Recommendation generateSimilarProductsRecommendation(String productId, String userId) {
         log.info("Generating similar products recommendation for product: {}", productId);
-        
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            // Create similar products prompt
-            String prompt = createSimilarProductsPrompt(productId);
-            
-            // Generate AI recommendations using Spring AI
-            String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
-            
-            // Create recommendation object
-            Recommendation recommendation = Recommendation.builder()
-                    .userId(userId)
-                    .requestType("SIMILAR_PRODUCTS")
-                    .context("PRODUCT_SEARCH")
-                    .productId(productId)
-                    .recommendationSummary(extractSummary(aiResponse))
-                    .reasoning(extractReasoning(aiResponse))
-                    .confidenceScore(calculateConfidence(aiResponse))
-                    .aiModelUsed("spring-ai-openai")
-                    .tokensUsed(estimateTokens(aiResponse))
-                    .processingTimeMs(System.currentTimeMillis() - startTime)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            
-            log.info("Similar products recommendation generated successfully for product: {}", productId);
-            return recommendation;
-            
-        } catch (Exception e) {
-            log.error("Error generating similar products recommendation for product: {}", productId, e);
-            throw new com.smartshopai.common.exception.BusinessException("Similar products recommendation failed", e);
-        }
+        String prompt = createSimilarProductsPrompt(productId);
+        return runRecommendation(prompt, null, userId, "SIMILAR_PRODUCTS", "PRODUCT_SEARCH", productId);
     }
 
     public Recommendation generateTrendingRecommendations() {
         log.info("Generating trending products recommendations");
-        
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            // Create trending products prompt
-            String prompt = createTrendingPrompt();
-            
-            // Generate AI recommendations using Spring AI
-            String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
-            
-            // Create recommendation object
-            Recommendation recommendation = Recommendation.builder()
-                    .userId("system")
-                    .requestType("TRENDING_PRODUCTS")
-                    .context("DISCOVERY")
-                    .recommendationSummary(extractSummary(aiResponse))
-                    .reasoning(extractReasoning(aiResponse))
-                    .confidenceScore(calculateConfidence(aiResponse))
-                    .aiModelUsed("spring-ai-openai")
-                    .tokensUsed(estimateTokens(aiResponse))
-                    .processingTimeMs(System.currentTimeMillis() - startTime)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            
-            log.info("Trending products recommendations generated successfully");
-            return recommendation;
-            
-        } catch (Exception e) {
-            log.error("Error generating trending products recommendations", e);
-            throw new com.smartshopai.common.exception.BusinessException("Trending recommendations failed", e);
-        }
+        String prompt = createTrendingPrompt();
+        return runRecommendation(prompt, null, "system", "TRENDING_PRODUCTS", "DISCOVERY", null);
     }
 
     public Recommendation generateDealRecommendations() {
         log.info("Generating deal recommendations");
-        
-        long startTime = System.currentTimeMillis();
-        
-        try {
-            // Create deal recommendations prompt
-            String prompt = createDealPrompt();
-            
-            // Generate AI recommendations using Spring AI
-            String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
-            
-            // Create recommendation object
-            Recommendation recommendation = Recommendation.builder()
-                    .userId("system")
-                    .requestType("DEAL_RECOMMENDATIONS")
-                    .context("DEALS")
-                    .recommendationSummary(extractSummary(aiResponse))
-                    .reasoning(extractReasoning(aiResponse))
-                    .confidenceScore(calculateConfidence(aiResponse))
-                    .aiModelUsed("spring-ai-openai")
-                    .tokensUsed(estimateTokens(aiResponse))
-                    .processingTimeMs(System.currentTimeMillis() - startTime)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            
-            log.info("Deal recommendations generated successfully");
-            return recommendation;
-            
-        } catch (Exception e) {
-            log.error("Error generating deal recommendations", e);
-            throw new com.smartshopai.common.exception.BusinessException("Deal recommendations failed", e);
-        }
+        String prompt = createDealPrompt();
+        return runRecommendation(prompt, null, "system", "DEAL_RECOMMENDATIONS", "DEALS", null);
     }
 
     private String createPersonalizedPrompt(Recommendation recommendation) {

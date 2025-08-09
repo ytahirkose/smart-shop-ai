@@ -276,7 +276,7 @@ public class ProductApplicationService {
 
         return productService.getProductsByIds(alternativeIds).stream()
                 .map(productMapper::toResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public List<ProductResponse> compareProducts(List<String> productIds) {

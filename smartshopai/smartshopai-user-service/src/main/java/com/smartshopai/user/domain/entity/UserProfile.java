@@ -27,4 +27,50 @@ public class UserProfile {
     // Timestamps
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // --- ADDED FIELDS FOR REPOSITORY COMPATIBILITY ---
+    /**
+     * Kullanıcı ID'si (referans için)
+     */
+    private String userId;
+
+    /**
+     * Maksimum alışveriş bütçesi (profilde gösterim ve öneri için)
+     */
+    private Double maxBudget;
+
+    /**
+     * Tercih edilen kategoriler (profilde gösterim ve öneri için)
+     */
+    private java.util.List<String> preferredCategories;
+
+    /**
+     * Profil tamamlandı mı?
+     */
+    @Builder.Default
+    private boolean profileCompleted = false;
+
+    /**
+     * Bildirim almak istiyor mu?
+     */
+    @Builder.Default
+    private boolean receiveNotifications = false;
+
+    /**
+     * E-posta ile bildirim almak istiyor mu?
+     */
+    @Builder.Default
+    private boolean receiveEmailAlerts = false;
+
+    /**
+     * SMS ile bildirim almak istiyor mu?
+     */
+    @Builder.Default
+    private boolean receiveSmsAlerts = false;
+
+    /**
+     * Push notification almak istiyor mu?
+     */
+    @Builder.Default
+    private boolean receivePushNotifications = false;
 }

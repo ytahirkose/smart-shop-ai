@@ -17,19 +17,19 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class RedisConfig {
 
-    @Value("${spring.redis.host:localhost}")
+    @Value("${spring.data.redis.host:localhost}")
     private String host;
 
-    @Value("${spring.redis.port:6379}")
+    @Value("${spring.data.redis.port:6379}")
     private int port;
 
-    @Value("${spring.redis.password:}")
+    @Value("${spring.data.redis.password:}")
     private String password;
 
-    @Value("${spring.redis.database:0}")
+    @Value("${spring.data.redis.database:0}")
     private int database;
 
-    @Value("${spring.redis.timeout:2000}")
+    @Value("${spring.data.redis.timeout:2000}")
     private long timeout;
 
     @Bean
@@ -46,34 +46,24 @@ public class RedisConfig {
         return new LettuceConnectionFactory(config);
     }
 
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
+    private <K, V> RedisTemplate<K, V> createTemplate(RedisConnectionFactory connectionFactory, org.springframework.data.redis.serializer.RedisSerializer<K> keySerializer, org.springframework.data.redis.serializer.RedisSerializer<V> valueSerializer) {
+        RedisTemplate<K, V> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
-        // Key serializer
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setHashKeySerializer(new StringRedisSerializer());
-        
-        // Value serializer
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
-        
+        template.setKeySerializer(keySerializer);
+        template.setHashKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+        template.setHashValueSerializer(valueSerializer);
         template.afterPropertiesSet();
         return template;
     }
 
     @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        return createTemplate(connectionFactory, new StringRedisSerializer(), new GenericJackson2JsonRedisSerializer());
+    }
+
+    @Bean
     public RedisTemplate<String, String> stringRedisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, String> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        
-        template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new StringRedisSerializer());
-        template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(new StringRedisSerializer());
-        
-        template.afterPropertiesSet();
-        return template;
+        return createTemplate(connectionFactory, new StringRedisSerializer(), new StringRedisSerializer());
     }
 }
