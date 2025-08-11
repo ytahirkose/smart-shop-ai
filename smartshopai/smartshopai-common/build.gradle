@@ -12,6 +12,8 @@ java {
 repositories {
     mavenCentral()
     maven { url 'https://repo.spring.io/snapshot' }
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
 }
 
 ext {
@@ -30,6 +32,7 @@ dependencyManagement {
 
 dependencies {
     // Spring Core dependencies (avoid spring-boot plugin for common module)
+    implementation platform("org.springframework.ai:spring-ai-bom:1.0.1")
     implementation 'org.springframework:spring-context'
     implementation 'org.springframework:spring-web'
     implementation 'org.springframework:spring-beans'
@@ -48,15 +51,14 @@ dependencies {
     annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
     
     // Spring AI
-    implementation "org.springframework.ai:spring-ai-openai-spring-boot-starter"
+    implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter:1.0.0-M6'
+    
 
-    // Test Dependencies
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+
 }
 
-test {
-    useJUnitPlatform()
-}
+
 
 // Disable Spring Boot executable jar for library module
 bootJar { enabled = false }

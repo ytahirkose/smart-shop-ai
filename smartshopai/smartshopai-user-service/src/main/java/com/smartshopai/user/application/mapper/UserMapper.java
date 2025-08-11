@@ -27,14 +27,9 @@ public interface UserMapper {
     @Mapping(target = "password", ignore = true) // Will be encoded separately
     @Mapping(target = "roles", ignore = true)
     @Mapping(target = "enabled", ignore = true)
-    @Mapping(target = "accountNonExpired", ignore = true)
-    @Mapping(target = "accountNonLocked", ignore = true)
-    @Mapping(target = "credentialsNonExpired", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "lastLoginAt", ignore = true)
-    @Mapping(target = "behaviorMetrics", ignore = true)
-    @Mapping(target = "purchaseHistory", ignore = true)
     @Mapping(target = "emailVerified", ignore = true)
     @Mapping(target = "phoneVerified", ignore = true)
     User toEntity(CreateUserRequest request);
@@ -47,7 +42,6 @@ public interface UserMapper {
     /**
      * Map User entity to UserResponse
      */
-    @Mapping(source = "behaviorMetrics", target = "behaviorMetrics")
     UserResponse toResponse(User user);
     
     /**

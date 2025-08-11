@@ -1,122 +1,63 @@
-// Initialize MongoDB databases for SmartShopAI
-db = db.getSiblingDB('smartshopai');
-db.createUser({ user: 'admin', pwd: 'password', roles: [ { role: 'readWrite', db: 'smartshopai' }, { role: 'readWriteAnyDatabase', db: 'admin' } ] });
-
-db = db.getSiblingDB('smartshopai_users');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_products');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_ai_analysis');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_ai_recommendation');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_ai_search');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_search');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_notification');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_monitoring');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_business_intelligence');
-db.createCollection('init');
-
-db = db.getSiblingDB('smartshopai_session_cache');
-db.createCollection('init');
 // MongoDB initialization script for SmartShopAI
-// This script creates the necessary databases and collections
-
 // Switch to admin database
-db = db.getSiblingDB('admin');
-
-// Create user for smartshopai database
-db.createUser({
+var adminDb = db.getSiblingDB('admin');
+adminDb.createUser({
   user: 'smartshopai_user',
   pwd: 'smartshopai_password',
-  roles: [
-    {
-      role: 'readWrite',
-      db: 'smartshopai'
-    }
-  ]
+  roles: [ { role: 'readWrite', db: 'smartshopai' } ]
 });
 
 // Switch to smartshopai database
-db = db.getSiblingDB('smartshopai');
-
-// Create collections for each service
-db.createCollection('users');
-db.createCollection('user_profiles');
-db.createCollection('user_preferences');
-db.createCollection('user_behavior_metrics');
-
-db.createCollection('products');
-db.createCollection('product_categories');
-db.createCollection('product_brands');
-db.createCollection('product_analyses');
-db.createCollection('product_comparisons');
-db.createCollection('reviews');
-
-db.createCollection('product_analyses');
-db.createCollection('analysis_requests');
-
-db.createCollection('recommendations');
-db.createCollection('recommendation_requests');
-db.createCollection('recommendation_results');
-
-db.createCollection('search_requests');
-db.createCollection('search_results');
-
-db.createCollection('notifications');
-db.createCollection('notification_templates');
-
-db.createCollection('metrics');
-db.createCollection('system_health');
-
-db.createCollection('analytics_events');
-db.createCollection('business_metrics');
+var shopDb = db.getSiblingDB('smartshopai');
+shopDb.createCollection('users');
+shopDb.createCollection('user_profiles');
+shopDb.createCollection('user_preferences');
+shopDb.createCollection('user_behavior_metrics');
+shopDb.createCollection('products');
+shopDb.createCollection('product_categories');
+shopDb.createCollection('product_brands');
+shopDb.createCollection('product_analyses');
+shopDb.createCollection('product_comparisons');
+shopDb.createCollection('reviews');
+shopDb.createCollection('analysis_requests');
+shopDb.createCollection('recommendations');
+shopDb.createCollection('recommendation_requests');
+shopDb.createCollection('recommendation_results');
+shopDb.createCollection('search_requests');
+shopDb.createCollection('search_results');
+shopDb.createCollection('notifications');
+shopDb.createCollection('notification_templates');
+shopDb.createCollection('metrics');
+shopDb.createCollection('system_health');
+shopDb.createCollection('analytics_events');
+shopDb.createCollection('business_metrics');
 
 // Create indexes for better performance
-db.users.createIndex({ "email": 1 }, { unique: true });
-db.users.createIndex({ "username": 1 }, { unique: true });
-
-db.products.createIndex({ "productId": 1 }, { unique: true });
-db.products.createIndex({ "name": "text", "description": "text" });
-db.products.createIndex({ "category": 1 });
-db.products.createIndex({ "brand": 1 });
-
-db.product_analyses.createIndex({ "productId": 1 });
-db.product_analyses.createIndex({ "userId": 1 });
-db.product_analyses.createIndex({ "analysisType": 1 });
-
-db.recommendations.createIndex({ "userId": 1 });
-db.recommendations.createIndex({ "requestType": 1 });
-
-db.search_requests.createIndex({ "userId": 1 });
-db.search_requests.createIndex({ "query": "text" });
-
-db.notifications.createIndex({ "userId": 1 });
-db.notifications.createIndex({ "type": 1 });
-db.notifications.createIndex({ "status": 1 });
-
-db.analytics_events.createIndex({ "userId": 1 });
-db.analytics_events.createIndex({ "eventType": 1 });
-db.analytics_events.createIndex({ "timestamp": 1 });
-
-db.business_metrics.createIndex({ "metricName": 1 });
-db.business_metrics.createIndex({ "category": 1 });
-db.business_metrics.createIndex({ "timestamp": 1 });
+shopDb.users.createIndex({ "email": 1 }, { unique: true });
+shopDb.users.createIndex({ "username": 1 }, { unique: true });
+shopDb.products.createIndex({ "productId": 1 }, { unique: true });
+shopDb.products.createIndex({ "name": "text", "description": "text" });
+shopDb.products.createIndex({ "category": 1 });
+shopDb.products.createIndex({ "brand": 1 });
+shopDb.product_analyses.createIndex({ "productId": 1 });
+shopDb.product_analyses.createIndex({ "userId": 1 });
+shopDb.product_analyses.createIndex({ "analysisType": 1 });
+shopDb.recommendations.createIndex({ "userId": 1 });
+shopDb.recommendations.createIndex({ "requestType": 1 });
+shopDb.search_requests.createIndex({ "userId": 1 });
+shopDb.search_requests.createIndex({ "query": "text" });
+shopDb.notifications.createIndex({ "userId": 1 });
+shopDb.notifications.createIndex({ "type": 1 });
+shopDb.notifications.createIndex({ "status": 1 });
+shopDb.analytics_events.createIndex({ "userId": 1 });
+shopDb.analytics_events.createIndex({ "eventType": 1 });
+shopDb.analytics_events.createIndex({ "timestamp": 1 });
+shopDb.business_metrics.createIndex({ "metricName": 1 });
+shopDb.business_metrics.createIndex({ "category": 1 });
+shopDb.business_metrics.createIndex({ "timestamp": 1 });
 
 // Insert sample data for testing
-db.users.insertOne({
+shopDb.users.insertOne({
   _id: "user-001",
   username: "testuser",
   email: "test@smartshopai.com",
@@ -129,7 +70,7 @@ db.users.insertOne({
   updatedAt: new Date()
 });
 
-db.products.insertOne({
+shopDb.products.insertOne({
   _id: "product-001",
   productId: "PROD-001",
   name: "Sample Product",

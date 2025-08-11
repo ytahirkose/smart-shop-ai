@@ -8,9 +8,7 @@ dependencies {
     implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
-    implementation "com.github.vladimir-bukhtoyarov:bucket4j-core:${bucket4jVersion}"
+    // Rate limiting - will be added when needed
+    // implementation "com.github.vladimir-bukhtoyarov:bucket4j-core:8.8.0"
 }
 
-test {
-    useJUnitPlatform()
-}

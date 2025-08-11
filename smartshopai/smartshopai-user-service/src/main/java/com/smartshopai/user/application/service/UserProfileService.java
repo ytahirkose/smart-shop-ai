@@ -1,7 +1,7 @@
 package com.smartshopai.user.application.service;
 
 import com.smartshopai.user.domain.entity.UserProfile;
-import com.smartshopai.user.domain.service.UserProfileService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -10,19 +10,19 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class UserProfileAppService {
+public class UserProfileService {
 
-    private final com.smartshopai.user.domain.service.UserProfileService domainService;
+    private final com.smartshopai.user.domain.service.UserProfileService userProfileDomainService;
 
     public UserProfile saveUserProfile(UserProfile profile) {
-        return domainService.saveUserProfile(profile);
+        return userProfileDomainService.saveUserProfile(profile);
     }
 
     public Optional<UserProfile> getUserProfile(String userId) {
-        return domainService.getUserProfile(userId);
+        return userProfileDomainService.getUserProfile(userId);
     }
 
     public List<UserProfile> getPublicProfiles() {
-        return domainService.getCompletedProfiles();
+        return userProfileDomainService.getCompletedProfiles();
     }
 }

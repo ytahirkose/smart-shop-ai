@@ -89,9 +89,9 @@ public class ProductAnalysisService {
         analysis.setTechnicalSummary(generateTechnicalSummary(product));
         analysis.setTechnicalSpecs(extractTechnicalSpecs(product));
         // Convert Map<String, Object> to Map<String, String> for technical details
-        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null) {
+        if (product.getSpecifications() != null && !product.getSpecifications().isEmpty()) {
             Map<String, String> technicalDetails = new HashMap<>();
-            product.getSpecifications().getSpecifications().forEach((key, value) -> 
+            product.getSpecifications().forEach((key, value) -> 
                 technicalDetails.put(key, value != null ? value.toString() : ""));
             analysis.setTechnicalDetails(technicalDetails);
         }
@@ -138,11 +138,11 @@ public class ProductAnalysisService {
             score += Math.min(product.getFeatures().size() * 0.5, 2.0);
         }
         
-        if (product.getAverageRating() != null) {
-            score += product.getAverageRating() * 0.3;
+        if (product.getRating() != null) {
+            score += product.getRating() * 0.3;
         }
         
-        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null && !product.getSpecifications().getSpecifications().isEmpty()) {
+        if (product.getSpecifications() != null && !product.getSpecifications().isEmpty()) {
             score += 1.0;
         }
         
@@ -186,7 +186,7 @@ public class ProductAnalysisService {
         if (product.getFeatures() != null && !product.getFeatures().isEmpty()) {
             pros.add("Rich feature set");
         }
-        if (product.getAverageRating() != null && product.getAverageRating() >= 4.0) {
+        if (product.getRating() != null && product.getRating() >= 4.0) {
             pros.add("Highly rated by users");
         }
         if (product.getWarranty() != null) {
@@ -202,7 +202,7 @@ public class ProductAnalysisService {
                 cons.add("No current discounts");
             }
         }
-        if (product.getAverageRating() != null && product.getAverageRating() < 3.5) {
+        if (product.getRating() != null && product.getRating() < 3.5) {
             cons.add("Below average user ratings");
         }
         return cons;
@@ -231,7 +231,7 @@ public class ProductAnalysisService {
         StringBuilder summary = new StringBuilder();
         summary.append("Technical overview of ").append(product.getName()).append(": ");
         
-        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null && !product.getSpecifications().getSpecifications().isEmpty()) {
+        if (product.getSpecifications() != null && product.getSpecifications() != null && !product.getSpecifications().isEmpty()) {
             summary.append("Comprehensive specifications available. ");
         }
         
@@ -246,8 +246,8 @@ public class ProductAnalysisService {
     
     private List<String> extractTechnicalSpecs(Product product) {
         List<String> specs = new ArrayList<>();
-        if (product.getSpecifications() != null && product.getSpecifications().getSpecifications() != null) {
-            product.getSpecifications().getSpecifications().forEach((key, value) ->
+        if (product.getSpecifications() != null && product.getSpecifications() != null) {
+            product.getSpecifications().forEach((key, value) ->
                 specs.add(key + ": " + value));
         }
         return specs;
@@ -303,10 +303,10 @@ public class ProductAnalysisService {
                 return "Rich feature set outperforms many competitors (" + featureCount + " listed features)";
             }
         }
-        if (product.getAverageRating() != null && product.getAverageRating() >= 4.5) {
-            return "Exceptional user satisfaction with an average rating of " + product.getAverageRating();
+        if (product.getRating() != null && product.getRating() >= 4.5) {
+            return "Exceptional user satisfaction with an average rating of " + product.getRating();
         }
-        if (Boolean.TRUE.equals(product.getFeatured())) {
+        if (product.isFeatured()) {
             return "Featured product in its category indicating strong vendor backing.";
         }
         return "Brand recognition and balanced feature-price ratio provide competitive edge.";
@@ -316,7 +316,7 @@ public class ProductAnalysisService {
         if (product.getViewCount() > 2000) {
             return "High and increasing view counts indicate rising market interest.";
         }
-        if (product.getAverageRating() != null && product.getAverageRating() >= 4.5) {
+        if (product.getRating() != null && product.getRating() >= 4.5) {
             return "Positive user sentiment suggests steady demand in the market.";
         }
         return "Market demand appears steady for this category.";

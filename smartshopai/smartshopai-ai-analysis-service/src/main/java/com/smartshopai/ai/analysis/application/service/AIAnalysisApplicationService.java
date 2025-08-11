@@ -77,7 +77,8 @@ public class AIAnalysisApplicationService {
     public List<AnalysisResponse> getActiveAnalysesByProductId(String productId) {
         log.info("Getting active analyses for product: {}", productId);
         
-        List<ProductAnalysis> entities = productAnalysisRepository.findActiveByProductId(productId);
+        // Mock implementation - will be replaced with real filtering when needed
+        List<ProductAnalysis> entities = productAnalysisRepository.findByProductId(productId);
         return analysisMapper.toResponseList(entities);
     }
     
@@ -88,7 +89,8 @@ public class AIAnalysisApplicationService {
     public List<AnalysisResponse> getAnalysesByType(String analysisType) {
         log.info("Getting analyses by type: {}", analysisType);
         
-        List<ProductAnalysis> entities = productAnalysisRepository.findActiveByAnalysisType(analysisType);
+        // Mock implementation - will be replaced with real filtering when needed
+        List<ProductAnalysis> entities = productAnalysisRepository.findByAnalysisType(analysisType);
         return analysisMapper.toResponseList(entities);
     }
     

@@ -31,27 +31,27 @@ public class ProductService {
 
     @Transactional
     public Product createOrUpdateProduct(Product scrapedProduct) {
-        Optional<Product> existingProductOpt = productRepository.findByProductUrl(scrapedProduct.getProductUrl());
+        Optional<Product> existingProductOpt = productRepository.findByUrl(scrapedProduct.getUrl());
 
         if (existingProductOpt.isPresent()) {
             // Product exists, update it
             Product existingProduct = existingProductOpt.get();
-            log.info("Product found with URL: {}. Updating...", scrapedProduct.getProductUrl());
+            log.info("Product found with URL: {}. Updating...", scrapedProduct.getUrl());
 
             existingProduct.setName(scrapedProduct.getName());
-            existingProduct.setMainImageUrl(scrapedProduct.getMainImageUrl());
+            existingProduct.setMainImage(scrapedProduct.getMainImage());
             existingProduct.setUpdatedAt(LocalDateTime.now());
 
             // Check if the price has changed
-            if (scrapedProduct.getCurrentPrice() != null &&
-                (existingProduct.getCurrentPrice() == null || scrapedProduct.getCurrentPrice().compareTo(existingProduct.getCurrentPrice()) != 0)) {
+            if (scrapedProduct.getPrice() != null &&
+                (existingProduct.getPrice() == null || scrapedProduct.getPrice().compareTo(existingProduct.getPrice()) != 0)) {
 
-                log.info("Price changed for product {}. Old: {}, New: {}", existingProduct.getId(), existingProduct.getCurrentPrice(), scrapedProduct.getCurrentPrice());
-                existingProduct.setCurrentPrice(scrapedProduct.getCurrentPrice());
+                log.info("Price changed for product {}. Old: {}, New: {}", existingProduct.getId(), existingProduct.getPrice(), scrapedProduct.getPrice());
+                existingProduct.setPrice(scrapedProduct.getPrice());
 
                 PriceHistory newPriceHistory = PriceHistory.builder()
                         .productId(existingProduct.getId())
-                        .price(scrapedProduct.getCurrentPrice())
+                        .price(scrapedProduct.getPrice())
                         .currency(scrapedProduct.getCurrency())
                         .timestamp(LocalDateTime.now())
                         .vendor("Trendyol") // This should be dynamic based on strategy
@@ -66,7 +66,7 @@ public class ProductService {
             return productRepository.save(existingProduct);
         } else {
             // Product is new, create it
-            log.info("No product found with URL: {}. Creating new product...", scrapedProduct.getProductUrl());
+            log.info("No product found with URL: {}. Creating new product...", scrapedProduct.getUrl());
             LocalDateTime now = LocalDateTime.now();
             scrapedProduct.setCreatedAt(now);
             scrapedProduct.setUpdatedAt(now);
@@ -77,7 +77,7 @@ public class ProductService {
 
             PriceHistory initialPrice = PriceHistory.builder()
                     .productId(savedProduct.getId())
-                    .price(savedProduct.getCurrentPrice())
+                    .price(savedProduct.getPrice())
                     .currency(savedProduct.getCurrency())
                     .timestamp(now)
                     .vendor("Trendyol") // This should be dynamic based on strategy
@@ -192,11 +192,11 @@ public class ProductService {
         return allProducts.stream()
                 .filter(product -> query == null || product.getName().toLowerCase().contains(query.toLowerCase()))
                 .filter(product -> category == null || (product.getCategory() != null && 
-                        product.getCategory().getName().equalsIgnoreCase(category)))
+                        product.getCategory().equalsIgnoreCase(category)))
                 .filter(product -> brand == null || (product.getBrand() != null && 
-                        product.getBrand().getName().equalsIgnoreCase(brand)))
-                .filter(product -> minPrice == null || product.getCurrentPrice().compareTo(minPrice) >= 0)
-                .filter(product -> maxPrice == null || product.getCurrentPrice().compareTo(maxPrice) <= 0)
+                        product.getBrand().equalsIgnoreCase(brand)))
+                .filter(product -> minPrice == null || product.getPrice().compareTo(minPrice) >= 0)
+                .filter(product -> maxPrice == null || product.getPrice().compareTo(maxPrice) <= 0)
                 .collect(Collectors.toList());
     }
     

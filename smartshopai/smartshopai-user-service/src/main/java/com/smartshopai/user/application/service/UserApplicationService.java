@@ -12,9 +12,7 @@ import com.smartshopai.user.domain.entity.UserProfile;
 import com.smartshopai.user.domain.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,7 +30,8 @@ public class UserApplicationService {
 
     private final UserService userService;
     private final UserMapper userMapper;
-    private final ChatClient chatClient;
+    // TODO: Add ChatClient when Spring AI is available
+    // private final ChatClient chatClient;
 
     public UserResponse createUser(CreateUserRequest request) {
         log.info("Creating new user with username: {}", request.getUsername());

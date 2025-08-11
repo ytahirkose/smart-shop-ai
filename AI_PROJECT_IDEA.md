@@ -201,7 +201,7 @@ SmartShopAI, yapay zeka teknolojisi ile alışveriş deneyimini devrimleştiren 
 - **Backend**: Java 21, Spring Boot 3.5
 - **Frontend**: React Native, Next.js
 - **AI/ML**: ChatGpt
-- **Database**: PostgreSQL, Redis
+- **Database**: MongoDb, Redis
 - **Cloud**: AWS/Azure
 
 Bu proje, hem büyük bir pazar potansiyeline sahip hem de gerçek bir tüketici sorununu çözüyor. AI teknolojisi ile alışveriş deneyimini devrimleştirebilir ve milyonlarca insanın daha akıllı alışveriş yapmasını sağlayabilir.

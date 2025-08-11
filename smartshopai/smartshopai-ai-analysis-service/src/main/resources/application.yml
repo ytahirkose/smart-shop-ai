@@ -4,81 +4,46 @@ server:
 spring:
   application:
     name: smartshopai-ai-analysis-service
-  config:
-    import: "optional:configserver:"
+  profiles:
+    active: docker
   data:
     mongodb:
-      host: localhost
+      host: mongodb
       port: 27017
-      database: smartshopai_ai_analysis
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
+      database: smartshopai
+      username: smartshopai_user
+      password: smartshopai_password
+      authentication-database: smartshopai
+  redis:
+    host: redis
+    port: 6379
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:sk-dummy-key-for-development}
-      base-url: https://api.openai.com
+      base-url: https://api.openai.com/v1
       chat:
         options:
           model: gpt-4
           temperature: 0.7
           max-tokens: 1000
-    ollama:
-      enabled: false
-      base-url: http://localhost:11434
-      chat:
-        options:
-          model: llama2
-          temperature: 0.7
-    vertex:
-      project-id: ${GOOGLE_CLOUD_PROJECT:smartshopai-project}
-      location: us-central1
-    azure:
-      openai:
-        endpoint: ${AZURE_OPENAI_ENDPOINT:https://smartshopai.openai.azure.com}
-        api-key: ${AZURE_OPENAI_API_KEY:dummy-key-for-development}
-        deployment-name: gpt-4
 
-# JWT Configuration
-jwt:
-  secret: your-secret-key-here-make-it-long-and-secure-in-production
-  expiration: 86400000 # 24 hours
-  refresh-expiration: 604800000 # 7 days
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
 
-# LangChain4j Configuration
-langchain4j:
-  open-ai:
-    api-key: ${OPENAI_API_KEY:sk-dummy-key-for-development}
-    base-url: https://api.openai.com
-    timeout: 60s
-    max-retries: 3
-
-# Vector Database Configuration
-vector:
-  pinecone:
-    api-key: ${PINECONE_API_KEY:dummy-key-for-development}
-    environment: us-west1-gcp
-    project-name: smartshopai
-  weaviate:
-    url: ${WEAVIATE_URL:http://localhost:8080}
-    api-key: ${WEAVIATE_API_KEY:dummy-key-for-development}
-
-# Logging
-logging:
-  level:
-    com.smartshopai.ai.analysis: DEBUG
-    org.springframework.ai: DEBUG
-    dev.langchain4j: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-
-# Management endpoints
 management:
   endpoints:
     web:
@@ -88,30 +53,7 @@ management:
     health:
       show-details: always
 
-# Eureka Client
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
-
-# Circuit Breaker
-resilience4j:
-  circuitbreaker:
-    instances:
-      openai-api:
-        sliding-window-size: 10
-        failure-rate-threshold: 50
-        wait-duration-in-open-state: 30s
-        permitted-number-of-calls-in-half-open-state: 3
-  retry:
-    instances:
-      openai-api:
-        max-attempts: 3
-        wait-duration: 1s
-        retry-exceptions:
-          - java.io.IOException
-          - java.net.SocketTimeoutException
+logging:
+  level:
+    com.smartshopai.ai.analysis: DEBUG
+    org.springframework.ai: DEBUG

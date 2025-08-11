@@ -51,14 +51,14 @@ public class ProductCategoryService {
     public ProductCategory findById(String id) {
         log.debug("Finding product category by ID: {}", id);
         return productCategoryRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("ProductCategory", id));
+                .orElseThrow(() -> new NotFoundException("ProductCategory", "id", id));
     }
 
     @Cacheable(value = "categories", key = "#slug")
     public ProductCategory findBySlug(String slug) {
         log.debug("Finding product category by slug: {}", slug);
         return productCategoryRepository.findBySlug(slug)
-                .orElseThrow(() -> new NotFoundException("ProductCategory with slug", slug));
+                .orElseThrow(() -> new NotFoundException("ProductCategory", "slug", slug));
     }
 
     public List<ProductCategory> findByParentCategoryId(String parentCategoryId) {

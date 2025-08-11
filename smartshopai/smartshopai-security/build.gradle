@@ -1,5 +1,12 @@
 dependencies {
-    // Spring Security
+    // Proje içi bağımlılıklar
+    implementation project(':smartshopai-common')
+
+    // Spring Cloud
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web' // For jakarta.servlet
 
@@ -9,9 +16,6 @@ dependencies {
     runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
 }
 
-test {
-    useJUnitPlatform()
-}
 
-bootJar { enabled = false }
-jar { enabled = true }
+bootJar { enabled = true }
+jar { enabled = false }

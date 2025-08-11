@@ -14,9 +14,7 @@ import com.smartshopai.product.infrastructure.client.AnalysisServiceClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,7 +33,8 @@ public class ProductApplicationService {
     private final ProductService productService;
     private final ProductMapper productMapper;
     private final AnalysisServiceClient analysisServiceClient;
-    private final ChatModel chatModel;
+    // TODO: Add ChatModel when Spring AI is available
+    // private final ChatModel chatModel;
 
     public ProductResponse createProduct(CreateProductRequest request) {
         log.info("Creating new product: {}", request.getName());
@@ -137,24 +136,17 @@ public class ProductApplicationService {
             Specifications: {specs2}
             """;
 
-        PromptTemplate promptTemplate = new PromptTemplate(promptString);
-        Prompt prompt = promptTemplate.create(Map.of(
-                "name1", product1.getName(),
-                "desc1", product1.getDescription(),
-                "price1", product1.getCurrentPrice(),
-                "specs1", product1.getSpecifications() != null ? product1.getSpecifications().getSpecifications() : "Not available",
-                "name2", product2.getName(),
-                "desc2", product2.getDescription(),
-                "price2", product2.getCurrentPrice(),
-                "specs2", product2.getSpecifications() != null ? product2.getSpecifications().getSpecifications() : "Not available"
-        ));
+        // TODO: Implement AI prompt when Spring AI is available
+        // PromptTemplate promptTemplate = new PromptTemplate(promptString);
+        // Prompt prompt = promptTemplate.create(Map.of(...));
 
-        String comparisonResult = chatModel.call(prompt).getResult().getOutput().getContent();
+        // TODO: Implement AI comparison when Spring AI is available
+        String comparisonResult = "AI comparison temporarily disabled - using default comparison logic";
 
         return ProductComparisonResponse.builder()
                 .comparedProductId(productId2)
                 .comparedProductName(product2.getName())
-                .comparedProductBrand(product2.getBrand() != null ? product2.getBrand().getName() : "N/A")
+                .comparedProductBrand(product2.getBrand() != null ? product2.getBrand() : "N/A")
                 .recommendation(comparisonResult)
                 .isBetterAlternative(true) // Logic to determine this can be more complex
                 .build();
@@ -197,12 +189,13 @@ public class ProductApplicationService {
         log.debug("Getting similar products for: {}", productId);
         Product product = productService.getProductById(productId);
 
-        if (product.getAnalysis() == null || product.getAnalysis().getEmbeddings() == null) {
-            log.warn("Product {} has no analysis or embeddings to find similar products.", productId);
+        if (product.getAnalytics() == null) {
+            log.warn("Product {} has no analytics to find similar products.", productId);
             return List.of();
         }
 
-        List<Double> embeddings = product.getAnalysis().getEmbeddings();
+        // TODO: Implement embeddings logic when analysis service is ready
+        List<Double> embeddings = List.of();
         List<String> similarProductIds = analysisServiceClient.findSimilarProductIds(embeddings, 5); // Find top 5
 
         // Remove the original product's ID from the similar list if it exists
@@ -252,21 +245,16 @@ public class ProductApplicationService {
 
         String candidatesAsString = candidateProducts.stream()
             .map(p -> String.format("- ID: %s, Name: %s, Price: %s, Specs: %s", 
-                                    p.getId(), p.getName(), p.getCurrentPrice(), 
-                                    p.getSpecifications() != null ? p.getSpecifications().getSpecifications() : "N/A"))
+                                    p.getId(), p.getName(), p.getPrice(), 
+                                    p.getSpecifications() != null ? p.getSpecifications().toString() : "N/A"))
             .collect(Collectors.joining("\n"));
 
-        PromptTemplate promptTemplate = new PromptTemplate(promptString);
-        Prompt prompt = promptTemplate.create(Map.of(
-            "baseId", baseProduct.getId(),
-            "baseName", baseProduct.getName(),
-            "basePrice", baseProduct.getCurrentPrice(),
-            "baseDesc", baseProduct.getDescription(),
-            "baseSpecs", baseProduct.getSpecifications() != null ? baseProduct.getSpecifications().getSpecifications() : "N/A",
-            "candidates", candidatesAsString
-        ));
+                // TODO: Implement AI prompt when Spring AI is available
+        // PromptTemplate promptTemplate = new PromptTemplate(promptString);
+        // Prompt prompt = promptTemplate.create(Map.of(...));
 
-        String aiResponse = chatModel.call(prompt).getResult().getOutput().getContent();
+        // TODO: Implement AI response when Spring AI is available
+        String aiResponse = "AI analysis temporarily disabled - using default recommendation logic";
         log.info("AI suggested alternatives: {}", aiResponse);
 
         List<String> alternativeIds = List.of(aiResponse.split(",\\s*"));

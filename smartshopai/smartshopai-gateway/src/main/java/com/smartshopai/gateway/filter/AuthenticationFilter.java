@@ -40,11 +40,11 @@ public class AuthenticationFilter implements GatewayFilter {
         try {
             String token = authHeader.substring(7);
             SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-            Claims claims = Jwts.parser()
-                                .verifyWith(key)
+            Claims claims = Jwts.parserBuilder()
+                                .setSigningKey(key)
                                 .build()
-                                .parseSignedClaims(token)
-                                .getPayload();
+                                .parseClaimsJws(token)
+                                .getBody();
 
             // 3. Add user info to request headers for downstream services
             ServerHttpRequest mutatedRequest = request.mutate()

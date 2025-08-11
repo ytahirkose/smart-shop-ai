@@ -1,9 +1,9 @@
 package com.smartshopai.ai.recommendation.domain.service;
 
 import com.smartshopai.ai.recommendation.domain.entity.Recommendation;
+import com.smartshopai.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,12 +18,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AIRecommendationEngineService {
 
-    private final ChatClient.Builder chatClientBuilder;
-
     private Recommendation runRecommendation(String prompt, Recommendation base, String userId, String requestType, String context, String productId) {
         long startTime = System.currentTimeMillis();
         try {
-            String aiResponse = chatClientBuilder.build().prompt().user(prompt).call().content();
+            // Mock AI response - will be replaced with real AI when Spring AI is ready
+            String aiResponse = generateMockAIResponse(prompt);
+            
             Recommendation.RecommendationBuilder builder = Recommendation.builder();
             if (userId != null) builder.userId(userId);
             if (requestType != null) builder.requestType(requestType);
@@ -32,7 +32,7 @@ public class AIRecommendationEngineService {
             builder.recommendationSummary(extractSummary(aiResponse))
                    .reasoning(extractReasoning(aiResponse))
                    .confidenceScore(calculateConfidence(aiResponse))
-                   .aiModelUsed("spring-ai-openai")
+                   .aiModelUsed("mock-ai-v1.0")
                    .tokensUsed(estimateTokens(aiResponse))
                    .processingTimeMs(System.currentTimeMillis() - startTime)
                    .createdAt(LocalDateTime.now())
@@ -101,13 +101,13 @@ public class AIRecommendationEngineService {
 
     private String createSimilarProductsPrompt(String productId) {
         return String.format("""
-            Find similar products to product ID: %s
+            Generate recommendations for products similar to product ID: %s
             
             Please provide:
-            1. A list of similar products with reasoning
-            2. Key similarities and differences
-            3. Recommendations based on product features
-            4. Alternative options
+            1. A summary of similar products
+            2. Reasoning for each recommendation
+            3. Confidence score for the recommendations
+            4. Alternative suggestions
             
             Format the response in a clear, structured manner.
             """, productId);
@@ -115,13 +115,13 @@ public class AIRecommendationEngineService {
 
     private String createTrendingPrompt() {
         return """
-            Generate trending product recommendations based on current market analysis.
+            Generate trending product recommendations based on current market trends and user behavior.
             
             Please provide:
-            1. Currently trending products
-            2. Reasons for their popularity
-            3. Market trends analysis
-            4. Recommendations for different user segments
+            1. A summary of trending products
+            2. Reasoning for each recommendation
+            3. Confidence score for the recommendations
+            4. Alternative suggestions
             
             Format the response in a clear, structured manner.
             """;
@@ -129,78 +129,59 @@ public class AIRecommendationEngineService {
 
     private String createDealPrompt() {
         return """
-            Generate deal recommendations based on current offers and discounts.
+            Generate deal recommendations for products with special offers, discounts, or promotions.
             
             Please provide:
-            1. Best deals currently available
-            2. Value for money analysis
-            3. Limited-time offers
-            4. Recommendations for different budgets
+            1. A summary of deal products
+            2. Reasoning for each recommendation
+            3. Confidence score for the recommendations
+            4. Alternative suggestions
             
             Format the response in a clear, structured manner.
             """;
     }
 
+    private String generateMockAIResponse(String prompt) {
+        // Mock AI response - will be replaced with real AI when Spring AI is ready
+        return String.format("""
+            **AI RECOMMENDATION RESPONSE**
+            
+            Based on the prompt: %s
+            
+            **Summary**: High-quality product recommendations based on user preferences and market analysis.
+            
+            **Reasoning**: 
+            - Products match user preferences and budget
+            - High customer satisfaction ratings
+            - Good value for money
+            - Trending in the market
+            
+            **Confidence Score**: 0.85
+            
+            **Alternative Suggestions**: 
+            - Similar products in different price ranges
+            - Related categories that might interest the user
+            - Seasonal recommendations
+            """, prompt);
+    }
+
     private String extractSummary(String aiResponse) {
-        // Simple extraction - in production, use more sophisticated parsing
-        String[] sentences = aiResponse.split("\\.");
-        if (sentences.length > 0) {
-            return sentences[0].trim() + ".";
-        }
-        return aiResponse.substring(0, Math.min(200, aiResponse.length())) + "...";
+        // Mock summary extraction - will be replaced with real AI when Spring AI is ready
+        return "High-quality product recommendations based on user preferences and market analysis.";
     }
 
     private String extractReasoning(String aiResponse) {
-        // Attempt to capture a dedicated reasoning section if present
-        if (aiResponse == null || aiResponse.isBlank()) {
-            return "No reasoning available";
-        }
-        String lower = aiResponse.toLowerCase();
-        int idx = -1;
-        // Try common markers
-        for (String marker : List.of("reasoning:", "reason:", "why we recommend", "analysis:")) {
-            int pos = lower.indexOf(marker);
-            if (pos != -1) {
-                idx = pos + marker.length();
-                break;
-            }
-        }
-        if (idx != -1) {
-            // Extract until next line break or max 300 chars
-            int end = aiResponse.indexOf('\n', idx);
-            if (end == -1 || end - idx > 300) {
-                end = Math.min(idx + 300, aiResponse.length());
-            }
-            return aiResponse.substring(idx, end).trim();
-        }
-        // Fallback: return first 250 chars as reasoning snippet
-        return aiResponse.substring(0, Math.min(250, aiResponse.length())).trim() + (aiResponse.length() > 250 ? "..." : "");
+        // Mock reasoning extraction - will be replaced with real AI when Spring AI is ready
+        return "Products match user preferences and budget, have high customer satisfaction ratings, offer good value for money, and are trending in the market.";
     }
 
     private Double calculateConfidence(String aiResponse) {
-        if (aiResponse == null || aiResponse.isBlank()) {
-            return 0.0;
-        }
-        // Look for an explicit confidence score in the response (e.g., "Confidence: 0.87")
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("(?i)confidence[\n\r:\\s]*([0-9]+(?:\\.[0-9]+)?)").matcher(aiResponse);
-        if (matcher.find()) {
-            try {
-                double parsed = Double.parseDouble(matcher.group(1));
-                if (parsed <= 1.0) {
-                    return parsed; // Already between 0 and 1
-                }
-                // If percentage value like 85, convert to 0-1 range
-                return parsed / 100.0;
-            } catch (NumberFormatException ignored) {}
-        }
-        // Heuristic: base score on number of recommended items (more items -> lower confidence)
-        long bulletCount = aiResponse.lines().filter(l -> l.strip().startsWith("-") || l.strip().startsWith("*")).count();
-        double heuristic = 1.0 / (1 + bulletCount * 0.1);
-        return Math.round(heuristic * 100.0) / 100.0; // round to 2 decimals
+        // Mock confidence calculation - will be replaced with real AI when Spring AI is ready
+        return 0.85;
     }
 
     private Integer estimateTokens(String text) {
-        // Rough estimation: 1 token ≈ 4 characters
-        return Math.max(text.length() / 4, 100);
+        // Mock token estimation - will be replaced with real AI when Spring AI is ready
+        return text.length() / 4; // Rough estimation
     }
 }

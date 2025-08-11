@@ -18,7 +18,8 @@ import java.util.List;
 @AllArgsConstructor
 public class ErrorResponse {
     
-    private String errorCode;
+    private Integer status;
+    private String error;
     private String message;
     private String userMessage;
     private LocalDateTime timestamp;
@@ -28,7 +29,7 @@ public class ErrorResponse {
     
     public static ErrorResponse of(String errorCode, String message) {
         return ErrorResponse.builder()
-                .errorCode(errorCode)
+                .error(errorCode)
                 .message(message)
                 .timestamp(LocalDateTime.now())
                 .build();
@@ -36,7 +37,7 @@ public class ErrorResponse {
     
     public static ErrorResponse of(String errorCode, String message, String userMessage) {
         return ErrorResponse.builder()
-                .errorCode(errorCode)
+                .error(errorCode)
                 .message(message)
                 .userMessage(userMessage)
                 .timestamp(LocalDateTime.now())

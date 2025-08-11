@@ -4,62 +4,117 @@ server:
 spring:
   application:
     name: smartshopai-gateway
+  profiles:
+    active: docker
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
-    loadbalancer:
-      ribbon:
-        enabled: false
-  # Redis ayarları (deprecated olanlar düzeltildi)
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      timeout: 2000ms
-      lettuce:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
+      routes:
+        - id: user-service
+          uri: lb://smartshopai-user-service
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=1
+        - id: product-service
+          uri: lb://smartshopai-product-service
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - StripPrefix=1
+        - id: ai-analysis-service
+          uri: lb://smartshopai-ai-analysis-service
+          predicates:
+            - Path=/api/ai/analysis/**
+          filters:
+            - StripPrefix=1
+        - id: ai-recommendation-service
+          uri: lb://smartshopai-ai-recommendation-service
+          predicates:
+            - Path=/api/ai/recommendations/**
+          filters:
+            - StripPrefix=1
+        - id: ai-search-service
+          uri: lb://smartshopai-ai-search-service
+          predicates:
+            - Path=/api/ai/search/**
+          filters:
+            - StripPrefix=1
+        - id: search-service
+          uri: lb://smartshopai-search-service
+          predicates:
+            - Path=/api/search/**
+          filters:
+            - StripPrefix=1
+        - id: notification-service
+          uri: lb://smartshopai-notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=1
+        - id: monitoring-service
+          uri: lb://smartshopai-monitoring
+          predicates:
+            - Path=/api/monitoring/**
+          filters:
+            - StripPrefix=1
+        - id: business-intelligence-service
+          uri: lb://smartshopai-business-intelligence-service
+          predicates:
+            - Path=/api/business-intelligence/**
+          filters:
+            - StripPrefix=1
+        - id: cache-service
+          uri: lb://smartshopai-cache-service
+          predicates:
+            - Path=/api/cache/**
+          filters:
+            - StripPrefix=1
+        - id: session-cache-service
+          uri: lb://smartshopai-session-cache-service
+          predicates:
+            - Path=/api/session-cache/**
+          filters:
+            - StripPrefix=1
+        - id: security-service
+          uri: lb://smartshopai-security
+          predicates:
+            - Path=/api/security/**
+          filters:
+            - StripPrefix=1
+        - id: swagger-ui
+          uri: http://localhost:8080
+          predicates:
+            - Path=/swagger-ui/**
+          filters:
+            - StripPrefix=0
+        - id: api-docs
+          uri: http://localhost:8080
+          predicates:
+            - Path=/v3/api-docs/**
+          filters:
+            - StripPrefix=0
 
-# JWT Configuration
-jwt:
-  secret: your-secret-key-here-make-it-long-and-secure-in-production
-  expiration: 86400000 # 24 hours
-  refresh-expiration: 604800000 # 7 days
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
 
-# Rate Limiting
-rate-limit:
-  requests-per-minute: 100
-  burst-capacity: 200
-
-# Logging
-logging:
-  level:
-    com.smartshopai.gateway: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-
-# Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,metrics,gateway
   endpoint:
     health:
       show-details: always
 
-# Eureka Client
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
-  instance:
-    prefer-ip-address: true
-    lease-renewal-interval-in-seconds: 30
-    lease-expiration-duration-in-seconds: 90
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web: DEBUG

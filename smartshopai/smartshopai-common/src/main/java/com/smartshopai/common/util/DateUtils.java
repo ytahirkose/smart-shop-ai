@@ -1,86 +1,42 @@
 package com.smartshopai.common.util;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.time.temporal.ChronoUnit;
 
-/**
- * Utility class for date and time operations
- * Provides common date manipulation methods
- */
 public final class DateUtils {
     
-    private static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-    private static final DateTimeFormatter DEFAULT_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT);
+    private DateUtils() {}
     
-    private DateUtils() {
-        // Utility class
-    }
+    private static final DateTimeFormatter DEFAULT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
     
-    /**
-     * Get current date time
-     */
-    public static LocalDateTime now() {
-        return LocalDateTime.now();
-    }
-    
-    /**
-     * Format date time to string
-     */
-    public static String format(LocalDateTime dateTime) {
-        return dateTime != null ? dateTime.format(DEFAULT_FORMATTER) : null;
-    }
-    
-    /**
-     * Format date time to string with custom format
-     */
-    public static String format(LocalDateTime dateTime, String pattern) {
+    public static String formatDateTime(LocalDateTime dateTime) {
         if (dateTime == null) return null;
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-        return dateTime.format(formatter);
+        return dateTime.format(DEFAULT_FORMATTER);
     }
     
-    /**
-     * Parse string to LocalDateTime
-     */
-    public static LocalDateTime parse(String dateTimeString) {
+    public static String formatISODateTime(LocalDateTime dateTime) {
+        if (dateTime == null) return null;
+        return dateTime.format(ISO_FORMATTER);
+    }
+    
+    public static LocalDateTime parseDateTime(String dateTimeString) {
+        if (dateTimeString == null || dateTimeString.trim().isEmpty()) return null;
         return LocalDateTime.parse(dateTimeString, DEFAULT_FORMATTER);
     }
     
-    /**
-     * Parse string to LocalDateTime with custom format
-     */
-    public static LocalDateTime parse(String dateTimeString, String pattern) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
-        return LocalDateTime.parse(dateTimeString, formatter);
+    public static boolean isExpired(LocalDateTime dateTime) {
+        if (dateTime == null) return true;
+        return dateTime.isBefore(LocalDateTime.now());
     }
     
-    /**
-     * Convert Date to LocalDateTime
-     */
-    public static LocalDateTime fromDate(Date date) {
-        return date != null ? date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime() : null;
+    public static long getDaysDifference(LocalDateTime start, LocalDateTime end) {
+        if (start == null || end == null) return 0;
+        return ChronoUnit.DAYS.between(start, end);
     }
     
-    /**
-     * Convert LocalDateTime to Date
-     */
-    public static Date toDate(LocalDateTime dateTime) {
-        return dateTime != null ? Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()) : null;
-    }
-    
-    /**
-     * Check if date is in the past
-     */
-    public static boolean isPast(LocalDateTime dateTime) {
-        return dateTime != null && dateTime.isBefore(LocalDateTime.now());
-    }
-    
-    /**
-     * Check if date is in the future
-     */
-    public static boolean isFuture(LocalDateTime dateTime) {
-        return dateTime != null && dateTime.isAfter(LocalDateTime.now());
+    public static LocalDateTime getCurrentDateTime() {
+        return LocalDateTime.now();
     }
 }

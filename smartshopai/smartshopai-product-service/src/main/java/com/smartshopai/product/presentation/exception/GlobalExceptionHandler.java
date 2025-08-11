@@ -1,14 +1,8 @@
 package com.smartshopai.product.presentation.exception;
 
-import com.smartshopai.common.dto.BaseResponse;
-import com.smartshopai.common.dto.ErrorResponse;
-import com.smartshopai.common.exception.BusinessException;
-import com.smartshopai.common.exception.NotFoundException;
-import com.smartshopai.common.exception.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,35 +18,8 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<BaseResponse<ErrorResponse>> handleNotFoundException(NotFoundException ex) {
-        log.warn("Resource not found: {}", ex.getMessage());
-        
-        ErrorResponse errorResponse = ErrorResponse.of("NOT_FOUND", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(BaseResponse.error("Resource not found", errorResponse));
-    }
-
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<BaseResponse<ErrorResponse>> handleBusinessException(BusinessException ex) {
-        log.warn("Business exception: {}", ex.getMessage());
-        
-        ErrorResponse errorResponse = ErrorResponse.of("BUSINESS_ERROR", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(BaseResponse.error("Business error occurred", errorResponse));
-    }
-
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<BaseResponse<ErrorResponse>> handleValidationException(ValidationException ex) {
-        log.warn("Validation exception: {}", ex.getMessage());
-        
-        ErrorResponse errorResponse = ErrorResponse.of("VALIDATION_ERROR", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(BaseResponse.error("Validation failed", errorResponse));
-    }
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<BaseResponse<ErrorResponse>> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<String> handleValidationException(MethodArgumentNotValidException ex) {
         log.warn("Method argument validation failed");
         
         List<String> errors = ex.getBindingResult().getFieldErrors()
@@ -60,31 +27,15 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
         
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .errorCode("VALIDATION_ERROR")
-                .message("Validation failed")
-                .details(errors)
-                .build();
-        
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(BaseResponse.error("Validation failed", errorResponse));
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<BaseResponse<ErrorResponse>> handleAccessDeniedException(AccessDeniedException ex) {
-        log.warn("Access denied: {}", ex.getMessage());
-        
-        ErrorResponse errorResponse = ErrorResponse.of("ACCESS_DENIED", "Access denied");
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(BaseResponse.error("Access denied", errorResponse));
+                .body("Validation failed: " + String.join(", ", errors));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<BaseResponse<ErrorResponse>> handleGenericException(Exception ex) {
+    public ResponseEntity<String> handleGenericException(Exception ex) {
         log.error("Unexpected error occurred", ex);
         
-        ErrorResponse errorResponse = ErrorResponse.of("INTERNAL_ERROR", "An unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(BaseResponse.error("Internal server error", errorResponse));
+                .body("Internal server error occurred");
     }
 }

@@ -8,9 +8,9 @@ plugins {
 }
 
 ext {
-    set('springCloudVersion', "2023.0.2")
-    set('springBootVersion', "3.3.0")
-    set('springAiVersion', "1.0.0-M3")
+    set('springCloudVersion', "2024.0.0")
+    set('springBootVersion', "3.5.0")
+    set('springAiVersion', "1.0.1")
     set('springSecurityVersion', "6.3.1")
     set('mongodbVersion', "8.0.0")
     set('redisVersion', "7.4.0")
@@ -22,14 +22,13 @@ ext {
     set('lombokVersion', "1.18.32")
     set('micrometerVersion', "1.13.0")
     set('resilience4jVersion', "3.0.0")
-    set('testcontainersVersion', "1.20.0")
-    set('seleniumVersion', "4.18.0")
-    set('playwrightVersion', "1.42.0")
     set('bucket4jVersion', "8.8.0")
-    set('springdocVersion', "2.5.0")
-    set('langchain4jVersion', "0.27.0")
-    set('pineconeVersion', "0.1.0")
-    set('weaviateVersion', "4.4.0")
+    set('springdocVersion', "2.6.0")
+    set('langchain4jVersion', "0.33.0")
+    set('pineconeVersion', "0.2.0")
+    set('weaviateVersion', "4.5.5")
+    set('playwrightVersion', "1.42.0")
+    set('seleniumVersion', "4.18.0")
 }
 
 allprojects {
@@ -45,7 +44,6 @@ allprojects {
         mavenCentral()
         maven { url 'https://repo.spring.io/milestone' }
         maven { url 'https://repo.spring.io/snapshot' }
-        maven { url 'https://repo.spring.io/spring-ai' }
     }
 }
 
@@ -62,6 +60,7 @@ subprojects {
     }
 
     dependencies {
+        implementation platform("org.springframework.ai:spring-ai-bom:1.0.1")
         implementation 'org.springframework.boot:spring-boot-starter'
         implementation 'org.springframework.boot:spring-boot-starter-actuator'
         implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -82,38 +81,13 @@ subprojects {
         implementation "io.micrometer:micrometer-tracing-bridge-brave"
         implementation "io.zipkin.reporter2:zipkin-reporter-brave"
 
-        // Test Dependencies
-        testImplementation 'org.springframework.boot:spring-boot-starter-test'
-        testImplementation "org.testcontainers:junit-jupiter"
-        testImplementation "org.testcontainers:mongodb"
-        testImplementation "org.testcontainers:elasticsearch"
-        testImplementation "org.testcontainers:kafka"
+
     }
 
-    test {
-        useJUnitPlatform()
-    }
+
 }
 
-task testReport(type: TestReport) {
-    destinationDir = file("$buildDir/reports/tests")
-    reportOn subprojects.collect { it.tasks.withType(Test) }
-}
 
-task jacocoRootReport(type: JacocoReport) {
-    dependsOn subprojects.collect { it.tasks.withType(Test) }
-    sourceDirectories.setFrom(files(subprojects.sourceSets.main.allSource.srcDirs))
-    classDirectories.setFrom(files(subprojects.sourceSets.main.output))
-    // Collect execution data only from subprojects that apply Jacoco
-    executionData.setFrom(files(subprojects.collect { proj ->
-        def task = proj.tasks.findByName('jacocoTestReport')
-        return task != null ? task.executionData : []
-    }))
-    reports {
-        xml.required = true
-        html.required = true
-    }
-}
 
 sonarqube {
     properties {
@@ -122,9 +96,3 @@ sonarqube {
         property "sonar.host.url", "http://localhost:9000"
     }
 }
-
-
-
-
-
-

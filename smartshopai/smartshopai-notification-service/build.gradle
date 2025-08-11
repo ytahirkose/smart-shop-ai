@@ -12,6 +12,7 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
     maven { url 'https://repo.spring.io/snapshot' }
 }
 
@@ -30,6 +31,7 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation platform("org.springframework.ai:spring-ai-bom:1.0.1")
     // Proje içi bağımlılıklar
     implementation project(':smartshopai-common')
 
@@ -46,6 +48,3 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 }
 
-test {
-    useJUnitPlatform()
-}

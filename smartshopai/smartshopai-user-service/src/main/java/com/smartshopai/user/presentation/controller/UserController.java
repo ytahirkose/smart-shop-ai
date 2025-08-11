@@ -1,193 +1,153 @@
 package com.smartshopai.user.presentation.controller;
 
-import com.smartshopai.common.dto.BaseResponse;
-import com.smartshopai.user.application.dto.request.CreateUserRequest;
-import com.smartshopai.user.application.dto.response.UserResponse;
-import com.smartshopai.user.application.mapper.UserMapper;
-import com.smartshopai.user.application.service.UserApplicationService;
+import com.smartshopai.user.application.service.UserService;
+import com.smartshopai.user.domain.entity.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
-/**
- * REST controller for User operations
- * Provides endpoints for user management
- */
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/users")
 @RequiredArgsConstructor
 @Tag(name = "User Management", description = "User management operations")
 public class UserController {
     
-    private final UserApplicationService userApplicationService;
-    private final UserMapper userMapper;
+    private final UserService userService;
     
-    /**
-     * Create new user
-     */
     @PostMapping
-    @Operation(summary = "Create new user", description = "Creates a new user account")
-    public ResponseEntity<BaseResponse<UserResponse>> createUser(@Valid @RequestBody CreateUserRequest request) {
-        log.info("Creating new user with email: {}", request.getEmail());
-        
-        UserResponse userResponse = userApplicationService.createUser(request);
-        
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(BaseResponse.success(userResponse, "User created successfully"));
+    @Operation(summary = "Create a new user", description = "Creates a new user with the provided information")
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        log.info("Creating new user with username: {}", user.getUsername());
+        User createdUser = userService.createUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
     
-    /**
-     * Get user by ID
-     */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    @Operation(summary = "Get user by ID", description = "Retrieves user information by ID")
-    public ResponseEntity<BaseResponse<UserResponse>> getUserById(@PathVariable String id) {
-        log.debug("Getting user by ID: {}", id);
-        
-        UserResponse userResponse = userApplicationService.getUserById(id);
-        
-        return ResponseEntity.ok(BaseResponse.success(userResponse));
+    @Operation(summary = "Get user by ID", description = "Retrieves a user by their unique identifier")
+    public ResponseEntity<User> getUserById(@PathVariable String id) {
+        log.info("Getting user by ID: {}", id);
+        Optional<User> user = userService.getUserById(id);
+        return user.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
     
-    /**
-     * Get current user profile
-     */
-    @GetMapping("/profile")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    @Operation(summary = "Get current user profile", description = "Retrieves current user's profile")
-    public ResponseEntity<BaseResponse<UserResponse>> getCurrentUserProfile() {
-        log.debug("Getting current user profile");
-        
-        UserResponse userResponse = userApplicationService.getCurrentUserProfile();
-        
-        return ResponseEntity.ok(BaseResponse.success(userResponse));
+    @GetMapping("/username/{username}")
+    @Operation(summary = "Get user by username", description = "Retrieves a user by their username")
+    public ResponseEntity<User> getUserByUsername(@PathVariable String username) {
+        log.info("Getting user by username: {}", username);
+        Optional<User> user = userService.getUserByUsername(username);
+        return user.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
     
-    /**
-     * Update user profile
-     */
+    @GetMapping("/email/{email}")
+    @Operation(summary = "Get user by email", description = "Retrieves a user by their email address")
+    public ResponseEntity<User> getUserByEmail(@PathVariable String email) {
+        log.info("Getting user by email: {}", email);
+        Optional<User> user = userService.getUserByEmail(email);
+        return user.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping
+    @Operation(summary = "Get all users", description = "Retrieves all users in the system")
+    public ResponseEntity<List<User>> getAllUsers() {
+        log.info("Getting all users");
+        List<User> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/role/{role}")
+    @Operation(summary = "Get users by role", description = "Retrieves all users with a specific role")
+    public ResponseEntity<List<User>> getUsersByRole(@PathVariable String role) {
+        log.info("Getting users by role: {}", role);
+        List<User> users = userService.getUsersByRole(role);
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/category/{category}")
+    @Operation(summary = "Get users by preferred category", description = "Retrieves users who prefer a specific category")
+    public ResponseEntity<List<User>> getUsersByPreferredCategory(@PathVariable String category) {
+        log.info("Getting users by preferred category: {}", category);
+        List<User> users = userService.getUsersByPreferredCategory(category);
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/budget/{budget}")
+    @Operation(summary = "Get users by budget limit", description = "Retrieves users with budget limit greater than specified amount")
+    public ResponseEntity<List<User>> getUsersByBudgetLimit(@PathVariable Double budget) {
+        log.info("Getting users by budget limit: {}", budget);
+        List<User> users = userService.getUsersByBudgetLimit(budget);
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/quality/{quality}")
+    @Operation(summary = "Get users by quality preference", description = "Retrieves users with a specific quality preference")
+    public ResponseEntity<List<User>> getUsersByQualityPreference(@PathVariable String quality) {
+        log.info("Getting users by quality preference: {}", quality);
+        List<User> users = userService.getUsersByQualityPreference(quality);
+        return ResponseEntity.ok(users);
+    }
+    
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    @Operation(summary = "Update user profile", description = "Updates user profile information")
-    public ResponseEntity<BaseResponse<UserResponse>> updateUser(@PathVariable String id, 
-                                                               @Valid @RequestBody CreateUserRequest request) {
+    @Operation(summary = "Update user", description = "Updates an existing user's information")
+    public ResponseEntity<User> updateUser(@PathVariable String id, @RequestBody User userDetails) {
         log.info("Updating user with ID: {}", id);
-        
-        UserResponse userResponse = userApplicationService.updateUser(id, request);
-        
-        return ResponseEntity.ok(BaseResponse.success(userResponse, "User updated successfully"));
+        User updatedUser = userService.updateUser(id, userDetails);
+        return ResponseEntity.ok(updatedUser);
     }
     
-    @GetMapping("/{id}/insights")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get AI-generated insights for a user", description = "Retrieves marketing and behavioral insights for a specific user.")
-    public ResponseEntity<BaseResponse<String>> getUserInsights(@PathVariable String id) {
-        log.debug("Getting AI insights for user: {}", id);
-        String insights = userApplicationService.getUserInsights(id);
-        return ResponseEntity.ok(BaseResponse.success(insights, "Insights generated successfully"));
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete user", description = "Deletes a user from the system")
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+        log.info("Deleting user with ID: {}", id);
+        userService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
     
-    @PostMapping("/{id}/track-view")
-    @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Track a product view for a user", description = "Records that a user has viewed a specific product.")
-    public ResponseEntity<Void> trackProductView(@PathVariable String id, @RequestBody Map<String, String> payload) {
-        String productId = payload.get("productId");
-        userApplicationService.trackProductView(id, productId);
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/{id}/track-search")
-    @PreAuthorize("hasRole('USER')")
-    @Operation(summary = "Track a search query for a user", description = "Records a search query made by a user.")
-    public ResponseEntity<Void> trackSearch(@PathVariable String id, @RequestBody Map<String, String> payload) {
-        String searchQuery = payload.get("searchQuery");
-        userApplicationService.trackSearch(id, searchQuery);
+    @PutMapping("/{id}/login")
+    @Operation(summary = "Update last login", description = "Updates the last login information for a user")
+    public ResponseEntity<Void> updateLastLogin(@PathVariable String id, @RequestParam String ipAddress) {
+        log.info("Updating last login for user with ID: {}", id);
+        userService.updateLastLogin(id, ipAddress);
         return ResponseEntity.ok().build();
     }
     
-    /**
-     * Update user behavior
-     */
-    @PostMapping("/{id}/behavior")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    @Operation(summary = "Update user behavior", description = "Updates user behavior metrics")
-    public ResponseEntity<BaseResponse<Void>> updateUserBehavior(@PathVariable String id,
-                                                               @RequestParam String action,
-                                                               @RequestParam String data) {
-        log.debug("Updating behavior for user: {}, action: {}", id, action);
-        
-        userApplicationService.updateUserBehavior(id, action, data);
-        
-        return ResponseEntity.ok(BaseResponse.success(null, "Behavior updated successfully"));
+    @PutMapping("/{id}/verify-email")
+    @Operation(summary = "Verify email", description = "Marks a user's email as verified")
+    public ResponseEntity<Boolean> verifyEmail(@PathVariable String id) {
+        log.info("Verifying email for user with ID: {}", id);
+        boolean verified = userService.verifyEmail(id);
+        return ResponseEntity.ok(verified);
     }
     
-    /**
-     * Get users by preferences (for AI recommendations)
-     */
-    @GetMapping("/by-preferences")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Get users by preferences", description = "Retrieves users by preferences for AI recommendations")
-    public ResponseEntity<BaseResponse<List<UserResponse>>> getUsersByPreferences(
-            @RequestParam List<String> categories,
-            @RequestParam(required = false) Double maxBudget) {
-        log.debug("Getting users by preferences - categories: {}, maxBudget: {}", categories, maxBudget);
-        
-        List<UserResponse> users = userApplicationService.getUsersByPreferences(categories, maxBudget);
-        
-        return ResponseEntity.ok(BaseResponse.success(users));
+    @PutMapping("/{id}/verify-phone")
+    @Operation(summary = "Verify phone", description = "Marks a user's phone number as verified")
+    public ResponseEntity<Boolean> verifyPhone(@PathVariable String id) {
+        log.info("Verifying phone for user with ID: {}", id);
+        boolean verified = userService.verifyPhone(id);
+        return ResponseEntity.ok(verified);
     }
     
-    /**
-     * Enable/disable user
-     */
-    @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "Update user status", description = "Enables or disables user account")
-    public ResponseEntity<BaseResponse<Void>> updateUserStatus(@PathVariable String id,
-                                                             @RequestParam boolean enabled) {
-        log.info("Updating user status - ID: {}, enabled: {}", id, enabled);
-        
-        userApplicationService.setUserEnabled(id, enabled);
-        
-        return ResponseEntity.ok(BaseResponse.success(null, "User status updated successfully"));
+    @PutMapping("/{id}/change-password")
+    @Operation(summary = "Change password", description = "Changes a user's password")
+    public ResponseEntity<Void> changePassword(@PathVariable String id, @RequestParam String newPassword) {
+        log.info("Changing password for user with ID: {}", id);
+        userService.changePassword(id, newPassword);
+        return ResponseEntity.ok().build();
     }
     
-    /**
-     * Verify user email
-     */
-    @PostMapping("/{id}/verify-email")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    @Operation(summary = "Verify user email", description = "Verifies user email address")
-    public ResponseEntity<BaseResponse<Void>> verifyEmail(@PathVariable String id) {
-        log.info("Verifying email for user: {}", id);
-        
-        userApplicationService.verifyEmail(id);
-        
-        return ResponseEntity.ok(BaseResponse.success(null, "Email verified successfully"));
-    }
-    
-    /**
-     * Verify user phone
-     */
-    @PostMapping("/{id}/verify-phone")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    @Operation(summary = "Verify user phone", description = "Verifies user phone number")
-    public ResponseEntity<BaseResponse<Void>> verifyPhone(@PathVariable String id) {
-        log.info("Verifying phone for user: {}", id);
-        
-        userApplicationService.verifyPhone(id);
-        
-        return ResponseEntity.ok(BaseResponse.success(null, "Phone verified successfully"));
+    @GetMapping("/health")
+    @Operation(summary = "Health check", description = "Simple health check endpoint")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("User Service is running!");
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -34,7 +34,7 @@ public class ProductController {
     private final ProductApplicationService productApplicationService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    
     @Operation(summary = "Create new product", description = "Creates a new product with AI analysis capabilities")
     public ResponseEntity<BaseResponse<ProductResponse>> createProduct(@Valid @RequestBody CreateProductRequest request) {
         log.info("Creating new product: {}", request.getName());
@@ -44,7 +44,7 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get product by ID", description = "Retrieves product information by ID")
     public ResponseEntity<BaseResponse<ProductResponse>> getProductById(@PathVariable String id) {
         log.debug("Getting product by ID: {}", id);
@@ -56,7 +56,7 @@ public class ProductController {
     }
 
     @GetMapping("/by-product-id/{productId}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get product by product ID", description = "Retrieves product information by product ID")
     public ResponseEntity<BaseResponse<ProductResponse>> getProductByProductId(@PathVariable String productId) {
         log.debug("Getting product by product ID: {}", productId);
@@ -68,7 +68,7 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    
     @Operation(summary = "Update product", description = "Updates product information")
     public ResponseEntity<BaseResponse<ProductResponse>> updateProduct(@PathVariable String id,
                                                                      @Valid @RequestBody CreateProductRequest request) {
@@ -78,7 +78,7 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    
     @Operation(summary = "Delete product", description = "Deletes a product (marks as discontinued)")
     public ResponseEntity<BaseResponse<Void>> deleteProduct(@PathVariable String id) {
         log.info("Deleting product with ID: {}", id);
@@ -87,7 +87,7 @@ public class ProductController {
     }
 
     @GetMapping("/category/{category}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get products by category", description = "Retrieves products by category with pagination")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> getProductsByCategory(@PathVariable String category,
                                                                                    Pageable pageable) {
@@ -97,7 +97,7 @@ public class ProductController {
     }
 
     @GetMapping("/brand/{brand}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get products by brand", description = "Retrieves products by brand with pagination")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> getProductsByBrand(@PathVariable String brand,
                                                                                 Pageable pageable) {
@@ -107,7 +107,7 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Search products", description = "Searches products by text")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> searchProducts(@RequestParam String q) {
         log.debug("Searching products with query: {}", q);
@@ -117,7 +117,7 @@ public class ProductController {
     }
 
     @GetMapping("/price-range")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get products by price range", description = "Retrieves products within a price range")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> getProductsByPriceRange(
             @RequestParam BigDecimal minPrice,
@@ -129,7 +129,7 @@ public class ProductController {
     }
 
     @GetMapping("/rating/{minRating}")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get products by minimum rating", description = "Retrieves products with minimum rating")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> getProductsByMinRating(@PathVariable Double minRating) {
         log.debug("Getting products by minimum rating: {}", minRating);
@@ -154,7 +154,7 @@ public class ProductController {
     }
 
     @PatchMapping("/{id}/feature")
-    @PreAuthorize("hasRole('ADMIN')")
+    
     @Operation(summary = "Set product's featured status", description = "Marks or unmarks a product as featured.")
     public ResponseEntity<BaseResponse<Void>> setFeaturedStatus(@PathVariable String id, @RequestParam boolean isFeatured) {
         log.info("Setting featured status to {} for product {}", isFeatured, id);
@@ -163,7 +163,7 @@ public class ProductController {
     }
 
     @GetMapping("/in-stock")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get in-stock products", description = "Retrieves products that are in stock")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> getInStockProducts() {
         log.debug("Getting in-stock products");
@@ -172,7 +172,7 @@ public class ProductController {
     }
 
     @PostMapping("/{productId}/analyze")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Analyze product with AI", description = "Performs AI analysis on a product")
     public ResponseEntity<BaseResponse<ProductAnalysisResponse>> analyzeProduct(@PathVariable String productId) {
         log.info("Analyzing product with ID: {}", productId);
@@ -181,7 +181,7 @@ public class ProductController {
     }
 
     @GetMapping("/{productId}/alternatives")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get product alternatives", description = "Retrieves alternative products")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> getProductAlternatives(@PathVariable String productId) {
         log.debug("Getting alternatives for product: {}", productId);
@@ -190,7 +190,7 @@ public class ProductController {
     }
 
     @GetMapping("/{productId}/similar")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Get similar products", description = "Retrieves similar products")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> getSimilarProducts(@PathVariable String productId) {
         log.debug("Getting similar products for: {}", productId);
@@ -199,7 +199,7 @@ public class ProductController {
     }
 
     @PostMapping("/compare")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    
     @Operation(summary = "Compare products", description = "Compares multiple products")
     public ResponseEntity<BaseResponse<List<ProductResponse>>> compareProducts(@RequestBody List<String> productIds) {
         log.debug("Comparing products: {}", productIds);
@@ -208,7 +208,7 @@ public class ProductController {
     }
 
     @PutMapping("/{productId}/link-analysis")
-    @PreAuthorize("hasRole('ADMIN')")
+    
     @Operation(summary = "Link analysis to product", description = "Links an AI analysis to a product")
     public ResponseEntity<BaseResponse<Void>> linkAnalysisToProduct(@PathVariable String productId,
                                                                    @RequestBody String analysisId) {

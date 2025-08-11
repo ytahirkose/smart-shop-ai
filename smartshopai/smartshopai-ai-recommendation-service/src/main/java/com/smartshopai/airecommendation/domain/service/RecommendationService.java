@@ -1,17 +1,13 @@
 package com.smartshopai.airecommendation.domain.service;
 
+import com.smartshopai.airecommendation.infrastructure.dto.ProductAnalysisDto;
+import com.smartshopai.airecommendation.infrastructure.dto.UserBehaviorMetricsDto;
+import com.smartshopai.airecommendation.infrastructure.dto.UserDto;
+import com.smartshopai.airecommendation.infrastructure.dto.UserPreferencesDto;
 import com.smartshopai.airecommendation.infrastructure.client.AnalysisServiceClient;
 import com.smartshopai.airecommendation.infrastructure.client.UserServiceClient;
-import com.smartshopai.airecommendation.infrastructure.dto.ProductAnalysisDto;
-import com.smartshopai.airecommendation.infrastructure.dto.UserDto;
-import com.smartshopai.airecommendation.infrastructure.dto.UserBehaviorMetricsDto;
-import com.smartshopai.airecommendation.infrastructure.dto.UserPreferencesDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,8 +23,6 @@ public class RecommendationService {
 
     private final UserServiceClient userServiceClient;
     private final AnalysisServiceClient analysisServiceClient;
-    private final ChatModel chatModel;
-    private final EmbeddingModel embeddingModel;
 
     /**
      * Hiper-kişiselleştirilmiş öneri üret (embedding, prompt, stream, koleksiyon kullanımı)
@@ -44,10 +38,8 @@ public class RecommendationService {
         String userBehaviorText = convertBehaviorToString(user);
         String combinedInfo = userPreferencesText + " " + userBehaviorText;
 
-        // Embedding oluştur
-        float[] rawEmb = embeddingModel.embed(combinedInfo);
-        List<Double> userEmbedding = new java.util.ArrayList<>(rawEmb.length);
-        for (float f : rawEmb) userEmbedding.add((double) f);
+        // Mock embedding oluştur - will be replaced with real AI when Spring AI is ready
+        List<Double> userEmbedding = generateMockEmbedding(combinedInfo);
         log.info("Generated combined embedding for user ID: {}", userId);
 
         // Benzer ürünleri bul
@@ -59,32 +51,8 @@ public class RecommendationService {
                 .map(ProductAnalysisDto::getProductId)
                 .collect(Collectors.joining(", "));
 
-        // Prompt oluştur ve LLM'e gönder
-        String promptString = """
-            You are 'SmartShopAI', a hyper-intelligent and perceptive shopping assistant.
-            You have deep knowledge about a user's stated preferences AND their recent behavior. Your task is to synthesize this information into a truly personal and insightful recommendation.
-
-            Here's the user's data:
-            - STATED PREFERENCES: {userPreferences}
-            - RECENT BEHAVIOR: {userBehavior}
-            
-            And here are the products that are technically the closest match to this combined profile: {productIds}
-
-            Your mission:
-            1.  Analyze both preferences and behavior. Notice any interesting patterns or contradictions (e.g., user says they like 'budget' items but looks at 'premium' products).
-            2.  Write a short, engaging recommendation. Address the user directly.
-            3.  Explicitly mention WHY you are recommending these products, referencing BOTH their preferences and recent actions. For example: "I know you prefer [preference], but I saw you were looking at [behavior], so you might also love this..."
-            4.  Select the top {selectionCount} products from the list to highlight.
-            """;
-        PromptTemplate promptTemplate = new PromptTemplate(promptString);
-        Prompt prompt = promptTemplate.create(Map.of(
-                "userPreferences", Objects.toString(userPreferencesText, "No specific preferences provided."),
-                "userBehavior", Objects.toString(userBehaviorText, "No recent activity recorded."),
-                "productIds", Objects.toString(similarProductIds, "None"),
-                "selectionCount", isPremiumUser ? "3-4" : "1-2"
-        ));
-        log.info("Sending final, behavior-driven prompt to LLM for user ID: {}", userId);
-        return chatModel.call(prompt).getResult().getOutput().getContent();
+        // Mock AI response - will be replaced with real AI when Spring AI is ready
+        return generateMockRecommendation(userPreferencesText, userBehaviorText, similarProductIds, isPremiumUser);
     }
 
     private String convertPreferencesToString(UserDto user) {
@@ -110,5 +78,40 @@ public class RecommendationService {
                 metrics.getRecentViewedProductIds(),
                 metrics.getRecentSearchQueries()
         );
+    }
+
+    private List<Double> generateMockEmbedding(String text) {
+        // Mock embedding - will be replaced with real AI when Spring AI is ready
+        List<Double> embedding = new java.util.ArrayList<>();
+        for (int i = 0; i < 768; i++) {
+            embedding.add(Math.random());
+        }
+        return embedding;
+    }
+
+    private String generateMockRecommendation(String userPreferences, String userBehavior, String productIds, boolean isPremiumUser) {
+        String selectionCount = isPremiumUser ? "3-4" : "1-2";
+        
+        return String.format("""
+            **SMARTSHOPAI PERSONALIZED RECOMMENDATIONS**
+            
+            Hello! I'm SmartShopAI, your hyper-intelligent shopping assistant.
+            
+            **Your Stated Preferences**: %s
+            **Your Recent Behavior**: %s
+            
+            **Recommended Products**: %s
+            
+            **Why I'm Recommending These**:
+            Based on your preferences and recent activity, I've found products that perfectly match your profile. 
+            I noticed some interesting patterns in your behavior that suggest you might love these selections.
+            
+            **Top %s Products to Highlight**:
+            - Product 1: Perfect match for your stated preferences
+            - Product 2: Based on your recent browsing behavior
+            - Product 3: Combines both your preferences and behavior patterns
+            
+            These recommendations are tailored specifically for you, combining your stated preferences with insights from your recent activity.
+            """, userPreferences, userBehavior, productIds, selectionCount);
     }
 }

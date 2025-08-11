@@ -5,22 +5,26 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
-/**
- * Repository for AnalysisRequest entity
- */
 @Repository
 public interface AnalysisRequestRepository extends MongoRepository<AnalysisRequest, String> {
-
-    List<AnalysisRequest> findByUserId(String userId);
     
-    List<AnalysisRequest> findByStatus(String status);
+    Optional<AnalysisRequest> findByRequestId(String requestId);
+    
+    List<AnalysisRequest> findByUserId(String userId);
     
     List<AnalysisRequest> findByAnalysisType(String analysisType);
     
-    List<AnalysisRequest> findByProductId(String productId);
+    List<AnalysisRequest> findByStatus(String status);
     
-    List<AnalysisRequest> findByUserIdAndStatus(String userId, String status);
+    List<AnalysisRequest> findByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
     
-    List<AnalysisRequest> findByUserIdAndAnalysisType(String userId, String analysisType);
+    boolean existsByRequestId(String requestId);
+    
+    long countByUserId(String userId);
+    
+    long countByAnalysisType(String analysisType);
+    
+    long countByStatus(String status);
 }

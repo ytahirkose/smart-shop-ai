@@ -1,0 +1,13 @@
+# Docker ortamı için özel ayarlar
+# Bu dosya, application.yml dosyasındaki ayarları ezer.
+
+spring:
+  # Spring Boot 3 ile uyumlu Redis ayarları
+  redis:
+    host: redis # Docker network'ündeki servis adı
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka/ # Docker network'ündeki servis adı
+

@@ -7,21 +7,24 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Repository for AnalysisResult entity
- */
 @Repository
 public interface AnalysisResultRepository extends MongoRepository<AnalysisResult, String> {
-
-    List<AnalysisResult> findByUserId(String userId);
     
-    List<AnalysisResult> findByProductId(String productId);
+    Optional<AnalysisResult> findByResultId(String resultId);
+    
+    List<AnalysisResult> findByUserId(String userId);
     
     List<AnalysisResult> findByAnalysisType(String analysisType);
     
-    Optional<AnalysisResult> findByAnalysisRequestId(String analysisRequestId);
+    List<AnalysisResult> findByStatus(String status);
     
-    List<AnalysisResult> findByUserIdAndAnalysisType(String userId, String analysisType);
+    List<AnalysisResult> findByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
     
-    List<AnalysisResult> findByProductIdAndAnalysisType(String productId, String analysisType);
+    boolean existsByResultId(String resultId);
+    
+    long countByUserId(String userId);
+    
+    long countByAnalysisType(String analysisType);
+    
+    long countByStatus(String status);
 }

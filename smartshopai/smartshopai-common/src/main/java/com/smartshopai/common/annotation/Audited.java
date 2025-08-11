@@ -7,16 +7,16 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to mark methods for auditing
- * Used for tracking method calls and performance metrics
+ * Automatically logs method calls and results
  */
-@Target({ElementType.METHOD})
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Audited {
     
     /**
-     * The name of the audit event
+     * Audit event type
      */
-    String value() default "";
+    String eventType() default "";
     
     /**
      * Whether to log method parameters
@@ -24,12 +24,12 @@ public @interface Audited {
     boolean logParameters() default true;
     
     /**
-     * Whether to log method result
+     * Whether to log return value
      */
-    boolean logResult() default false;
+    boolean logReturnValue() default false;
     
     /**
-     * Whether to measure execution time
+     * Whether to log execution time
      */
-    boolean measureTime() default true;
+    boolean logExecutionTime() default true;
 }

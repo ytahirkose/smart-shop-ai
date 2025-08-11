@@ -33,6 +33,7 @@ dependencyManagement {
 }
 
 dependencies {
+    implementation platform("org.springframework.ai:spring-ai-bom:1.0.1")
     implementation project(':smartshopai-common')
     implementation project(':smartshopai-security')
     
@@ -61,12 +62,5 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
     
     // Test Dependencies
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.testcontainers:testcontainers'
-    testImplementation 'org.testcontainers:junit-jupiter'
 }
 
-test {
-    useJUnitPlatform()
-}

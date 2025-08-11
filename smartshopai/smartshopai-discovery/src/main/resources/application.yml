@@ -5,7 +5,7 @@ spring:
   application:
     name: smartshopai-discovery
   profiles:
-    active: dev
+    active: docker
   security:
     user:
       name: admin
@@ -19,12 +19,11 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
   server:
     enable-self-preservation: false
     eviction-interval-timer-in-ms: 1000
     response-cache-update-interval-ms: 3000
-    peer-eureka-nodes-update-interval-ms: 3000
     renewal-percent-threshold: 0.85
     renewal-threshold-update-interval-ms: 15
     peer-eureka-status-refresh-time-interval-ms: 0
@@ -34,7 +33,6 @@ eureka:
     peer-node-read-timeout-ms: 200
     peer-node-total-conns: 1000
     peer-node-total-conns-per-host: 500
-    peer-node-connection-idle-timeout-seconds: 30
     retention-time-in-ms-in-delta-queue: 3
     delta-retention-time-interval-in-ms: 6
     max-elements-in-peer-replication-pool: 1000
@@ -46,31 +44,13 @@ eureka:
     min-threads-for-status-replication: 1
     number-of-replication-retries: 5
     peer-eureka-nodes-update-interval-ms: 600000
-    peer-eureka-status-refresh-time-interval-ms: 0
-    wait-time-in-ms-when-sync-empty: 100
-    peer-node-connect-timeout-ms: 200
-    peer-node-connection-idle-timeout-seconds: 30
-    peer-node-read-timeout-ms: 200
-    peer-node-total-conns: 1000
-    peer-node-total-conns-per-host: 500
-    peer-node-connection-idle-timeout-seconds: 30
-    retention-time-in-ms-in-delta-queue: 3
-    delta-retention-time-interval-in-ms: 6
-    max-elements-in-peer-replication-pool: 1000
-    max-elements-in-status-replication-pool: 1000
-    max-threads-for-peer-replication: 20
-    max-threads-for-status-replication: 1
-    max-time-for-replication: 30000
-    min-threads-for-peer-replication: 5
-    min-threads-for-status-replication: 1
-    number-of-replication-retries: 5
 
 # Management endpoints
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,eureka
+        include: health,info,metrics
   endpoint:
     health:
       show-details: always

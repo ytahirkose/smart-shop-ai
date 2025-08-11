@@ -6,30 +6,30 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to mark methods for caching
- * Used for method result caching with configurable TTL
+ * Annotation to mark methods as cacheable
+ * Provides cache configuration options
  */
-@Target({ElementType.METHOD})
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Cacheable {
     
     /**
-     * The cache name
+     * Cache key prefix
      */
-    String value();
+    String keyPrefix() default "";
     
     /**
-     * Cache key expression (SpEL)
+     * Cache TTL in seconds
      */
-    String key() default "";
+    long ttl() default 3600;
     
     /**
-     * Time to live in seconds
+     * Whether to cache null values
      */
-    long ttl() default 300; // 5 minutes default
+    boolean cacheNullValues() default false;
     
     /**
-     * Whether to cache null results
+     * Cache condition (SpEL expression)
      */
-    boolean cacheNull() default false;
+    String condition() default "";
 }

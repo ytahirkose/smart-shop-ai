@@ -52,20 +52,20 @@ public class ProductBrandService {
     public ProductBrand findById(String id) {
         log.debug("Finding product brand by ID: {}", id);
         return productBrandRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("ProductBrand", id));
+                .orElseThrow(() -> new NotFoundException("ProductBrand", "id", id));
     }
 
     @Cacheable(value = "brands", key = "#slug")
     public ProductBrand findBySlug(String slug) {
         log.debug("Finding product brand by slug: {}", slug);
         return productBrandRepository.findBySlug(slug)
-                .orElseThrow(() -> new NotFoundException("ProductBrand with slug", slug));
+                .orElseThrow(() -> new NotFoundException("ProductBrand", "slug", slug));
     }
 
     public ProductBrand findByName(String name) {
         log.debug("Finding product brand by name: {}", name);
         return productBrandRepository.findByName(name)
-                .orElseThrow(() -> new NotFoundException("ProductBrand with name", name));
+                .orElseThrow(() -> new NotFoundException("ProductBrand", "name", name));
     }
 
     public List<ProductBrand> findActiveBrands() {

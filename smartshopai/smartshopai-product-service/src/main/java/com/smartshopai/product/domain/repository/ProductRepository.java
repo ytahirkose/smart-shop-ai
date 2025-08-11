@@ -27,7 +27,7 @@ public interface ProductRepository extends MongoRepository<Product, String> {
      * @param productUrl The URL of the product page.
      * @return An Optional containing the product if found.
      */
-    Optional<Product> findByProductUrl(String productUrl);
+    Optional<Product> findByUrl(String url);
 
     /**
      * Performs a full-text search on the name and description fields.
